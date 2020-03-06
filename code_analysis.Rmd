@@ -1,0 +1,999 @@
+---
+title: "Analysis code"
+author: "written by Timothy M Pollington and reviewed by Lloyd AC Chapman"
+date: "November 2019"
+output: 
+  pdf_document:
+    number_sections: true
+    toc: true
+    toc_depth: 3
+bibliography: rmarkdown.bib
+---
+<!-- All text within chunks should be line breaked to avoid >90 characters per line. This is an example of a line which doesn't do that! but it's outside of a chunk so you can still see it. You can set the display of the vertical line in the Editor pane to assist you in RStudio > Tools > Global Options > Code > Display > Margin column = 90 -->
+***
+
+# Prerequisites before your first knit of this document
+**Correct knitting of this document and use of the tau functions [(section link)](#taufunctions) requires cloning the [GitHub repository](https://github.com/t-pollington/measles) into an RStudio project (RStudio cmds: `File > New Project > Version Control > Git > repository URL = https://github.com/t-pollington/measles!makepublic`) (prior to publication this repo can be accessed via https://warwick.ac.uk/fac/sci/mathsys/people/students/2015intake/pollington_tim/measles-master.zip) and then building the functions necessary in RStudio before use (RStudio cmds: `Build > Configure Build Tools` and setting package directory to `yourchoice/measles/tauodds` and then in the top-right Build pane choose `Install and Restart`); this is why we require `devtools` package to be installed earlier. Sometimes if an error appears when building in RStudio's Build pane then you will need to check your RStudio is running the 64-bit R in Tools > Global Options > General> Basic tab > R Sessions > R version box. Also in the Build pane just choosing More > Clean & Rebuild can fix the problem.**
+
+You may also need to install the following R packages and be running RStudio `as administrator` to install them (this is useful anyway for modifying the file structure of your cloned repository). 
+```{r prerequisites}
+# install.packages(pkgs = c("IDSpatialStats","surveillance","latex2exp",
+# "scales","GET","devtools","coxed"))
+# You'll need to copy and paste them uncommented into your R console to run.
+```
+
+If you haven't compiled LaTeX before on your Windows OS then downloading the `tinytex` package and running `tinytex::install_tinytex()` can help. Also Replace & Find in RStudio (`Ctrl+Shift+J`) the file paths `/home/tim/measles/figs` & `/home/tim/measles/intrmd8` that may require amending according to the system filepath that your cloned repository is in.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+Our code examines how the different aspects of *tau statistic* implementation may affect the *range of spatiotemporal clustering*, by comparing against the standard analysis [@Lessler2016]---a measles dataset[@Neal2004;@Oesterle1992;@Pfeilsticker1863] with the time-relatedness interval defined as $[T_1=0, T_2=14]$ and an overlapping distance band set. 
+# How to use this document
+This `.Rmd` document can be *knitted* in `RStudio`[@RStudio] to output a results `.pdf` file for easier printing or device accessibility. It is composed of chunks that all run when the document is knit to print the results, or they can be run separately in `RStudio` (note: they may depend on variables from earlier chunks having been run). A References section is provided [(section link)](#references). Other sections are cross-linked throughout using "(section link)" internal links.
+
+Cloning our [GitHub repository](https://github.com/t-pollington/measles) makes sense if you want to easily amend code or find errors. Please contact before doing a Pull request to save you time in case we can answer the error you have found. 
+
+For reproducibility we provide the `set.seed` numbers for initialising any use of random number generations in the analysis from jittering to bootstrap sampling. Major outputs are also saved.
+
+For computer-intensive chunks we indicate typical runtimes$^1$ and load the pre-run graph instead, and use `eval = F` to skip the chunk; this can be relaxed by changing to `eval = T` for the chunk(s) of interest. 
+^[based on a Dell™ Precision M2800 laptop with Intel® Core™ i7-4810MQ CPU @ 2·80GHz × 8 with 16MB RAM]
+We also do data checks and tests to show the code runs as expected. All code was run in R v3·6·1[@R] on RStudio® v1·2·5001 in Linux® Mint™ 19·2 Tina operating system. 
+
+# Descriptive analyses on the Hagelloch measles dataset
+
+## Dataset check
+We use the open access Hagelloch dataset from the `surveillance` R package[@Meyer2017]. Like Lessler et al's shared code (unpublished) we take the start of the prodromal period (`tPRO`) as the start of onset. There are 188 cases, one data row per case. In a reduced version of the dataset (`X`), all five variables have reasonable ranges and data types as shown below. 
+```{r load data, message=FALSE}
+rm(list = ls()) # clear the R workspace
+data("hagelloch", package = "surveillance") 
+library(surveillance)
+```
+```{r data check}
+help("hagelloch") # load dataset info in RStudio's Help pane
+rm(hagelloch) # additional time series object that loads is not required
+# X = {house no, patient no, x/y-location, prodromal start}
+X = subset(hagelloch.df, select = c("HN","PN","x.loc","y.loc","tPRO"))
+dim(X)
+str(X) # data types as expected
+length(unique(X$HN)) # 56 case hhlds
+length(unique(X$PN)) == length(X$PN) # all PN unique. PASS
+apply(X,2,range) # no gaps in the PNs PASS, reasonable ranges for the others
+sum(is.na(X)) + sum(is.null(X)) + sum(apply(X, 2, is.nan)) # PASS
+# Remove PN as all found to be unique.
+X = subset(hagelloch.df, select = c("x.loc","y.loc","tPRO","HN"))
+```
+
+## About the epidemic
+```{r about the epidemic}
+SI.mean = 14.9 # mean serial interval (days) from Cori et al 2013, Table 1, p1507
+tPRO.range = c(floor(min(X$tPRO)), ceiling(max(X$tPRO)))
+round(diff(range(X$tPRO))/SI.mean) # approximate number of generations covered
+hist(X$tPRO, xlab="Onset time (days)", ylab="Measles cases", main=NULL,
+breaks = seq.int(tPRO.range[1], tPRO.range[2], by = 1),xaxs="i", yaxs="i", col = "black", 
+xaxt = "n",
+panel.first = {
+  grid(NA,10,lty = 3,lwd = 0.5, col = "grey")
+  })
+axis(1, at=c(0,23,47,60,87), labels=c(0,23,47,60,87), col.axis="black", las=1)
+```
+The epidemic lasts nearly 3 months which could have covered up to ~6 disease generations based on estimated serial intervals for this specific epidemic[@Cori2013]. Five generations can be discerned from the epidemic curve of this propagated epidemic. 
+
+```{r plothist, eval=F}
+setwd("/home/tim/measles/figs")
+pdf("Re.pdf")
+hist(X$tPRO, xlab="Study time (days)", ylab="Measles cases", cex.lab = 1.5, main=NULL, 
+breaks = seq.int(tPRO.range[1],tPRO.range[2],by = 1), xaxs="i", yaxs="i", xaxt = "n", 
+yaxt = "n", col = "black", panel.first = {
+  grid(NA,10,lty = 3,lwd = 0.5, col = "grey")
+})
+axis(2, at=c(0,5,10,15,20), labels=c(0,5,10,15,20), col.axis="black", las=1)
+axis(1, at=c(0,23,47,60,80,87), labels=c(0,23,47,60,80,""), col.axis="black", las=1)
+dev.off()
+```
+
+## Spatiotemporal plots
+```{r spatiotemporal plot, eval=F}
+# generate STplot----
+# define palette----
+set.seed(seed = 2)
+df = data.frame(x = X$x.loc, y = X$y.loc, t = X$tPRO)
+rbPal = colorRampPalette(colors = c("red","orange","yellow","green","blue","purple","violet")) # plot rainbow colours
+df$col = rbPal(10)[as.numeric(cut(df$t, breaks = 10))] # coloured deciles
+
+setwd("/home/tim/measles/figs")
+pdf("STplot.pdf")
+# jitter in x & y separately, using Uniform[-2,+2] distribution .
+plot(jitter(X$x.loc,amount = 5), jitter(X$y.loc,amount = 5), col = df$col, main = NULL, 
+xlab = "", ylab = "", xaxs="i", yaxs="i", 
+pch = 20, cex = 2, cex.lab = 1.5, xlim = c((min(X$x.loc)-5),(max(X$x.loc)+5)), 
+ylim = c((min(X$y.loc)-5),(max(X$y.loc)+5)))
+mtext(latex2exp::TeX('$y$ (m)'), side=2, line=2, cex = 1.5)
+mtext(latex2exp::TeX('$x$ (m)'), side=1, line=3, cex = 1.5)
+par(xpd=TRUE)
+legend.text = c("1-9","10-19","20-28","29-38","39-47","48-57","58-67","68-76","77-86",
+"87")
+legend(x = 5,y = 235, title = "Onset time decile (days)", legend = legend.text, 
+col  = rbPal(10), pch = 20, cex = 0.9, pt.cex = 2, ncol = 2)
+dev.off()
+```
+![Spatial plot of cases' locations (jittered) with colour marks for onset date](./figs/STplot.pdf){width=100%}
+
+The study window was a ~280m x 240m rectangle. Households have single or multiple cases. The jittered plot shows that household cases often have very similar onsets because they share the same colour. Nearby houses also tend to share similar onsets to their neighbours but there are exceptions; the range in which the onsets are similar is likely of the order of tens of metres. 
+
+```{r figlabel}
+# fig_label() from @January2017 for later figure labelling----
+fig_label <- function(text, region="figure", pos="topleft", cex=NULL, ...) {
+  region <- match.arg(region, c("figure", "plot", "device"))
+  pos <- match.arg(pos, c("topleft", "top", "topright", 
+                          "left", "center", "right", 
+                          "bottomleft", "bottom", "bottomright"))
+  if(region %in% c("figure", "device")) {
+    ds <- dev.size("in")
+    # xy coordinates of device corners in user coordinates
+    x <- grconvertX(c(0, ds[1]), from="in", to="user")
+    y <- grconvertY(c(0, ds[2]), from="in", to="user")
+    # fragment of the device we use to plot
+    if(region == "figure") {
+      # account for the fragment of the device that 
+      # the figure is using
+      fig <- par("fig")
+      dx <- (x[2] - x[1])
+      dy <- (y[2] - y[1])
+      x <- x[1] + dx * fig[1:2]
+      y <- y[1] + dy * fig[3:4]
+    } 
+  }
+  # much simpler if in plotting region
+  if(region == "plot") {
+    u <- par("usr")
+    x <- u[1:2]
+    y <- u[3:4]
+  }
+  sw <- strwidth(text, cex=cex) * 60/100
+  sh <- strheight(text, cex=cex) * 60/100
+  x1 <- switch(pos,
+    topleft     =x[1] + sw, 
+    left        =x[1] + sw,
+    bottomleft  =x[1] + sw,
+    top         =(x[1] + x[2])/2,
+    center      =(x[1] + x[2])/2,
+    bottom      =(x[1] + x[2])/2,
+    topright    =x[2] - sw,
+    right       =x[2] - sw,
+    bottomright =x[2] - sw)
+  y1 <- switch(pos,
+    topleft     =y[2] - sh,
+    top         =y[2] - sh,
+    topright    =y[2] - sh,
+    left        =(y[1] + y[2])/2,
+    center      =(y[1] + y[2])/2,
+    right       =(y[1] + y[2])/2,
+    bottomleft  =y[1] + sh,
+    bottom      =y[1] + sh,
+    bottomright =y[1] + sh)
+  old.par <- par(xpd=NA)
+  on.exit(par(old.par))
+  text(x1, y1, text, cex=cex, ...)
+  return(invisible(c(x,y)))
+}
+```
+Third-party code assists us with figure labelling[@January2017].
+
+# Tau functions {#taufunctions}
+The actual tau functions as coded in the C language and saved as a .cpp file can be found in the `./tauodds/src/*.cpp` based on adaptations from the original `IDSpatialStats` code[@LesslerGiles].
+
+## Defining tau functions
+```{r some-tau-functions}
+# faster version of IDSpatialStats::get.tau()----
+summonTau = function(X.region, r.min, r.max, T1, T2){
+  tau = tauodds::getTau2OddsMeasles(X.region[,"x"], X.region[,"y"], X.region[,"tPRO"], 
+  r.min, r.max, as.integer(1:nrow(X.region)), T1, T2)
+  return(tau)
+}
+# faster version of IDSpatialStats::get.tau.bootstrap()----
+summonTauBstrap = function(X.region, r.min, r.max, bootiters, T1, T2){
+  tauboots = matrix(NA, nrow = bootiters, ncol = length(r.max))
+  for (i in 1:bootiters) {
+    inds = sample(nrow(X.region), replace = T)
+    tauboots[i,] = tauodds::getTau2OddsMeasles(X.region[,"x"], X.region[,"y"], 
+    X.region[,"tPRO"], r.min, r.max, as.integer(inds), T1, T2)
+  }
+  return(tauboots)
+}
+# faster version of IDSpatialStats::get.tau.bootstrap() which ignores and repeats----
+# bootstrapped estimate if any Inf values are computed. Necessary for 
+# GET::global_envelope_test
+summonTauBstrapnoinfs = function(X.region, r.min, r.max, bootiters, T1, T2){
+  tauboots = matrix(NA, nrow = bootiters, ncol = length(r.max))
+  i = 1
+  while (i <= bootiters) {
+    inds = sample(nrow(X.region), replace = T)
+    tauboots[i,] = tauodds::getTau2OddsMeasles(X.region[,"x"], X.region[,"y"], 
+    X.region[,"tPRO"], r.min, r.max, as.integer(inds), T1, T2)
+    if(sum(is.infinite(tauboots[i,]))==0){
+      i = i + 1
+    }
+  }
+  return(tauboots)
+}
+# faster version of IDSpatialStats::get.tau.bootstrap() using Loh & Stein's marked----
+# point bootstrap
+summonTauBstraploh = function(X.region, r.min, r.max, bootiters, T1, T2){
+tauboots = matrix(NA, nrow = bootiters, ncol = length(r.max))
+for (i in 1:bootiters) {
+  inds = sample(nrow(X.region), replace = T)
+  tauboots[i,] = tauodds::getTau2Loh(X.region[,"x"], X.region[,"y"], X.region[,"tPRO"], 
+  r.min, r.max, as.integer(inds), T1, T2)
+}
+return(tauboots)
+}
+# faster version of IDSpatialStats::get.tau.bootstrap() using modified Loh & Stein's 
+# marked point bootstrap----
+summonTauBstraplohv2 = function(X.region, r.min, r.max, bootiters, T1, T2){
+tauboots = matrix(NA, nrow = bootiters, ncol = length(r.max))
+for (i in 1:bootiters) {
+  inds = sample(nrow(X.region),replace = T)
+  tauboots[i,] = tauodds::getTau2Lohv2(X.region[,"x"], X.region[,"y"], X.region[,"tPRO"], 
+  r.min, r.max, as.integer(inds), T1, T2)
+}
+return(tauboots)
+}
+# obtains percentile CIs from summonTauBstrap() result----
+summonTauCI <- function(tauboots,r.max){
+  tau.ci = matrix(nrow=2, ncol=length(r.max))
+  for (i in 1:length(r.max)) {
+    tau.ci[,i] = quantile(tauboots[,i], probs=c(0.025, 0.975), type = 7)
+  }
+  return(tau.ci)
+}
+```
+
+## Toy problem to validate them
+We use a toy system of 5 cases to test `IDSpatialStats::get.tau.bootstrap()` against these Tau functions defined above. All came out fine versus non-computer calculations.
+
+```{r testing_with_toy_model}
+# specify the toy system----
+toy = matrix(c(0,0,1,0,1,2,1,0,5,1,1,14,1,2,9), nrow = 5, ncol = 3, 
+dimnames = list(NULL,c("x","y","t")), byrow = T)
+toy.r.max = c(1.1,2) # two distance bands
+toy.r.min = c(0,1.1)
+hagg.func <- function(a, b, tlimit=4){ # with a time-relatedness interval of 
+  # [T_1 = 0, T_2 = 4]
+  if(abs(a[3]-b[3]) <= tlimit){rc=1}
+  else{rc=2}
+  return(rc)
+}
+
+# run Lessler's and our function on this----
+set.seed(seed = 1)
+IDSpatialStats::get.tau.bootstrap(toy, hagg.func, r = toy.r.max, r.low = toy.r.min, 
+boot.iter = 1, comparison.type = "independent") # the inds that get.tau.bootstrap() used 
+# were read from additional print statements added to their code and input into ours.
+inds = c(1,4,1,2,5) # this is the inds that is used for get.tau.bootstrap as printed off 
+# when it had an extra printf statement in the get.tau.bootstrap program
+tauodds::getTau2OddsMeasles(toy[,"x"], toy[,"y"], toy[,"t"], toy.r.min, toy.r.max, 
+as.integer(inds), 0, 4) # matches paper calculation
+tauodds::getTau2Loh(toy[,"x"], toy[,"y"], toy[,"t"], toy.r.min, toy.r.max, 
+as.integer(inds), 0, 4) # matches paper calculation
+```
+
+## Loading Lessler measles setup to validate tau functions
+```{r loading lessler measles setup}
+# the following code is abridged from that kindly provided by Lessler et al of their
+# measles analysis----
+hag.dat = cbind(hagelloch.df$x.loc, hagelloch.df$y.loc, hagelloch.df$tPRO)
+colnames(hag.dat) = c("x","y","tPRO")
+
+hagg.func<-function(a,b,tlimit=14){ # time-relatedness interval [T_1 = 0, T_2 = 14]
+  if(abs(a[3]-b[3]) <= tlimit){rc=1}
+  else{rc=2}
+  return(rc)
+}
+
+dist.gap = 50
+r.max = seq(10,125,2)
+r.min = r.max-dist.gap
+r.min[which(r.min < 0)] = 0
+r.mid = (r.max+r.min)/2
+```
+
+## The baseline: validation against Lessler et al's published graph
+```{r validate tau functions, eval=F}
+# generate Lessler's measles analysis by running their function and ours----
+tau.hagg = IDSpatialStats::get.tau(hag.dat, hagg.func, r=r.max, r.low=r.min, 
+comparison.type = "independent")$tau # note in IDSpatialStats functions the r.min & r.max
+# order is swapped
+set.seed(seed = 2)
+ptm = proc.time()
+tau.ci = IDSpatialStats::get.tau.ci(hag.dat, hagg.func, r=r.max, r.low=r.min, 
+boot.iter=100, comparison.type = "independent")[,4:5]
+proc.time() - ptm # 32·982s
+set.seed(seed = 2) # same seed for fair comparison
+ptm = proc.time()
+tauCItmp = summonTauBstrap(as.matrix(hag.dat), r.min, r.max, bootiters = 100, T1 = 0,
+T2 = 14)
+tauCI = summonTauCI(tauCItmp, r.max)
+proc.time() - ptm # 1·148s
+setwd("/home/tim/measles/intrmd8")
+save(tau.hagg, file = "tau.hagg.RData")
+
+# plot our reproduction of Lessler's analysis----
+setwd("/home/tim/measles/figs")
+pdf("taureproduction.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
+plot(r.mid, tau.hagg, ylim=c(0.6,max(tau.ci[2,])+0.5), type="l", log="y", xlim=c(0,100), 
+yaxt="n", axes=F, xaxs="i", yaxs="i", col = "black", 
+xlab = "Midpoint of the distance band, from an average case (m)",
+ylab = "", lwd = 4, cex.lab = 1.5)
+mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'),side=2, line=2, cex = 1.5)
+axis(2, las=1, at=c(0.6,1,2,5,12), labels = c("0·6","1","2·0","5·0","12·0"), lwd = 4)
+axis(1, las=1, lwd = 4)
+abline(h=1, lty=2, col=1, lwd = 4)
+lines(r.mid, tauCI[1,], lty = 2, col = "green", lwd = 4)
+lines(r.mid, tauCI[2,], lty = 2, col = "green", lwd = 4)
+lines(r.mid, tau.ci[,1], lty = 3, col = "slategrey", lwd = 4)
+lines(r.mid, tau.ci[,2], lty = 3, col = "slategrey", lwd = 4)
+abline(v = 14.5, col = "red", lwd = 4)
+legend(x = 30, y = 8, legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate'), 
+"95% pointwise envelope (our function)",
+latex2exp::TeX('95% pointwise envelope ($\\textit{IDSpatialStats}$)'),"End of clustering (defined by Lessler et al.)"),
+col=c("black", "green", "slategrey","red"), lty=c(1,2,3,1), cex=1.05, yjust = 0.5, lwd = 6)
+dev.off()
+
+# graphical abstract version----
+pdf("taureproduction.ga.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
+plot(r.mid, tau.hagg, ylim=c(0.6,max(tau.ci[2,])+0.5), type="l", xlim=c(0,100), yaxt="n", 
+     axes=F, xaxs="i", yaxs="i", col = "black", log = "y",
+     xlab = latex2exp::TeX('Distance from average case, $d$'), ylab = "", lwd = 8, cex.lab = 2)
+mtext(latex2exp::TeX('$\\tau$'), side = 2, cex = 2, las = 1, line = 2, lwd = 4)
+axis(2, las=1, at=c(0.6,1,12.0), labels = c("0·6","1","12"), cex = 2, lwd = 4)
+axis(1, las=1, at = c(0,50,100), labels = c("0","50","100"), cex = 2, lwd = 4)
+abline(h=1, lty=2, col=1, lwd = 4)
+lines(r.mid, tauCI[1,], col = "slategrey", lwd = 8)
+lines(r.mid, tauCI[2,], col = "slategrey", lwd = 8)
+dev.off()
+```
+![Reproducing Lessler et al's Fig4C using our own tau functions](./figs/taureproduction.pdf){width=100%}
+
+`summonTauBstrap()` is faster than `IDSpatialStats` equivalent (1·148s vs 32·982s). It still outputs a similar version to Lessler's albeit a difference due to different ways of dividing up and ordering the call of `sample(..., seed = )` resulting in different seeds being used. 
+
+We are confident that `seed = 2` produces a result identical to the original graph in [@Lessler2016 Fig 4C p10/13] as the lower bound touches 14·5m which matches the "up to 15m" result in Lessler and the CIs coincide perfectly. In fact due to the convention of plotting a distance band's midpoint this refers to clustering "up to 30m"; also the exact matchup of the confidence intervals shows that the faster code emulates the original.
+
+# Hypothesis testing
+
+## Global Envelope Tests
+We construct a *global envelope* around the null hypothesis $H_0=\text{no spatial clustering}$ represented by $\tau=1$ (simulated by time mark permutations of the dataset). We assess if a region exists where the tau point estimate is above the upper bound (or below the lower bound as a two-tailed test) of this null envelope, using 2,500 iterations. A two-sided test is necessary as until you plot the graph you don't know whether there is clustering, inhibition or both. 
+```{r GET, eval = F}
+# generate 'time mark'-permuted dataset. We have not produced a replacement function in
+# this case----
+set.seed(seed = 4)
+ptm = proc.time()
+hag.permute = IDSpatialStats::get.tau.permute(posmat = as.matrix(hag.dat), 
+fun = hagg.func, r = r.max, r.low = r.min, permutations = 2500, 
+comparison.type = "independent")
+proc.time() - ptm # 875·221s ~ 15mins
+setwd("/home/tim/measles/intrmd8")
+save(hag.permute, file = "hag.permute.RData")
+
+# create curve set for null hypothesis for GET----
+load(file = "tau.hagg.RData")
+curveset = GET::create_curve_set(list(r = r.max, obs = tau.hagg, sim_m = t(hag.permute)))
+res.cr = GET::global_envelope_test(curve_sets = curveset, type = "rank", alpha = 0.05,
+alternative = c("two.sided"), ties = "erl", probs = c(0.025, 0.975), quantile.type = 7, 
+central = "median")
+round(attr(res.cr,"p_interval"), digits = 3) # p-value range
+
+# GET plot----
+setwd("/home/tim/measles/figs")
+pdf("get.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
+plot(NULL, xlim = c(0,100), ylim = c(min(res.cr$lo),max(res.cr$obs)), xaxt = "n", 
+yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", 
+xlab = "", lwd = 4,
+cex.lab = 1.5)
+mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
+mtext(latex2exp::TeX(
+'Distance band endpoint ($d_m$) at 2m increments,'), side=1, line=3, cex = 1.5)
+mtext(latex2exp::TeX(
+'from an average case (m)'), side=1, line=4, cex = 1.5)
+for (i in 1:2500) {
+  lines(r.max, hag.permute[i,], col = scales::alpha("grey", alpha = 0.3), lwd = 4)
+}
+axis(2, las=1, at=c(0.7,1,2,3,4), labels = c("0·7","1","2·0","3·0","4·0"), lwd = 4)
+lines(res.cr$r, res.cr$lo, col = "slategrey", lwd = 6)
+lines(res.cr$r, res.cr$hi, col = "slategrey", lwd = 6)
+lines(res.cr$r, res.cr$central, col = "red", lwd = 6)
+lines(res.cr$r, res.cr$obs, lwd = 4)
+axis(1, lwd = 4)
+abline(h=1, lty = 2, lwd = 4)
+legend(x = 55, y = 3.4, legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate'), 
+"95% global envelope",latex2exp::TeX('simulations of $H_0$'), "    median simulation",
+latex2exp::TeX('$\\tau = 1$')), col=c("black", "slategrey", "grey", "red", "black"),
+lty=c(1,1,1,1,2), cex=1.05, yjust = 0.5, lwd = 6)
+par(xpd = TRUE)
+text(latex2exp::TeX('$\\textit{p}$-value$\\in\\lbrack$0,0·014$\\rbrack$'), x = 85, y = 1.4)
+dev.off()
+
+# graphical abstract version----
+r.max1 = r.max[1:46]
+res.cr1 = res.cr[1:46]
+hag.permute1 = hag.permute[,1:46]
+
+pdf("get.ga.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
+plot(NULL, xlim = c(10,100), ylim = c(min(res.cr1$lo),max(res.cr1$obs)), xaxt = "n", 
+yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", 
+xlab = latex2exp::TeX(
+'$d$'), lwd = 8, cex.lab = 2)
+mtext(latex2exp::TeX('$\\tau$'), side = 2, cex = 2, las = 1, line = 2, lwd = 4)
+for (i in 1:2500) {
+  lines(r.max1, hag.permute1[i,], col = scales::alpha("grey", alpha = 0.3), lwd = 8)
+}
+axis(2, las=1, at=c(0.7,1,4), labels = c("0·7","1","4·0"), cex = 2, lwd = 4)
+axis(1, las=1, at=c(10, 50, 100), labels = c("10","50","100"), cex = 2, lwd = 4)
+lines(res.cr1$r, res.cr1$lo, col = "slategrey", lwd = 8)
+lines(res.cr1$r, res.cr1$hi, col = "slategrey", lwd = 8)
+lines(res.cr1$r, res.cr1$obs, lwd = 8)
+lines(res.cr1$r[1:10], res.cr1$obs[1:10], lwd = 16)
+lines(x = c(res.cr1$r[10],res.cr1$r[10]+0.6*(res.cr1$r[11] - res.cr1$r[10])), y = c(res.cr1$obs[10],res.cr1$obs[10]+0.6*(res.cr1$obs[11] - res.cr1$obs[10])), lwd = 16, col = "black")
+lines(res.cr1$r[44:46], res.cr1$obs[44:46], lwd = 16)
+lines(x = c(10,100), y = c(1,1), lty = 2, lwd = 8)
+par(xpd = TRUE)
+mtext(side = 3, text = latex2exp::TeX('p-value$\\in\\lbrack$ 0,0·014 $\\rbrack$'), 
+outer = 0, cex = 2, lwd = 4)
+dev.off()
+```
+![Global Envelope Test](./figs/get.pdf){width=100%}
+
+# Parameter estimation of $\hat{D}$---the distance range of spatiotemporal clustering
+The `ciIntercept()` function identifies the values of d where $\tau(\hat{d}) = 1$ for the `d.envelope`.
+
+## Number of bootstrap estimates
+```{r no of bootstrap estimates, eval = F}
+# generate 100 and 2500 bootstrap estimates----
+set.seed(seed = 5)
+ptm = proc.time()
+tauCItmp2500noinfs = summonTauBstrapnoinfs(as.matrix(hag.dat), r.min, r.max, 
+bootiters = 2500, T1 = 0, T2 = 14)
+proc.time() - ptm # 21·955s
+setwd("/home/tim/measles/intrmd8")
+save(tauCItmp2500noinfs, file = "tauCItmp2500noinfs.RData")
+set.seed(seed = 6)
+tauCItmp100noinfs = summonTauBstrapnoinfs(as.matrix(hag.dat), r.min, r.max, 
+bootiters = 100, T1 = 0, T2 = 14)
+save(tauCItmp100noinfs, file = "tauCItmp100noinfs.RData")
+```
+```{r ciintercept}
+# ciIntercept() function----
+ciIntercept <- function(n.sim, mid.set, tau.sim) {
+  j.max = length(mid.set)
+  # now define d.envelope
+  alwaysabove1 = 0
+  d.envelope = NULL
+  for (i in 1:n.sim) {
+    j = 1
+    if(tau.sim[i,j] > 1){ # else ignore simulation as starting from below tau = 1
+      stillabove1 = T
+      while (stillabove1 & (j < j.max)) {
+        j = j + 1
+        if(tau.sim[i,j] <= 1){ # else it stays above tau = 1 until the next j is tested
+          stillabove1 = F
+          root.tau1 = ((1-tau.sim[i,(j-1)])*(mid.set[j]-mid.set[j-1])/
+                         (tau.sim[i,j]-tau.sim[i,(j-1)]))+mid.set[j-1]
+          d.envelope = c(d.envelope, root.tau1)
+        }
+      }
+      if(stillabove1 & j==j.max){
+        alwaysabove1 = alwaysabove1 + 1
+      }
+    }
+  }
+  # print warnings as if the value is much below 100% then a CI can't be constructed as
+  # it has not been drawn from a random sample.
+  print(paste0("sims cross tau = 1 from above = ",length(d.envelope)/n.sim*100,"%"))
+  print(paste0("alwaysabove1 = ",alwaysabove1/n.sim*100,"%"))
+  return(d.envelope)
+}
+```
+
+Note that some chunks have had `warning=FALSE` set, to silence messages about "pch value '255' is invalid in this locale". Running code appears to plot the graphs as intended.
+```{r compute d.envelope, eval=F, warning=FALSE}
+# compute d.envelope by number of bootstrap estimates (100 or 2500)----
+setwd("/home/tim/measles/intrmd8")
+load(file = "tau.hagg.RData")
+load(file = "tauCItmp2500noinfs.RData")
+load(file = "tauCItmp100noinfs.RData")
+d.envelope2500 = ciIntercept(2500, mid.set = r.mid, tau.sim = tauCItmp2500noinfs)
+d.envelope100 = ciIntercept(100, mid.set = r.mid, tau.sim = tauCItmp100noinfs)
+quantile(d.envelope2500, probs = c(0.025,0.975))
+quantile(d.envelope100, probs = c(0.025,0.975))
+save(d.envelope2500, file = "d.envelope2500.RData")
+save(d.envelope100, file = "d.envelope100.RData")
+
+# compute where on d-axis the point estimate intercepts tau(d) = 1----
+firstbelow1 = which(tau.hagg < 1)[1] # when does the point estimate first fall below tau=1
+y1 = tau.hagg[firstbelow1-1]
+y2 = tau.hagg[firstbelow1]
+x1 = r.mid[firstbelow1-1]
+x2 = r.mid[firstbelow1]
+m = (y2-y1)/(x2-x1)
+dintercept.pointestimate = (1+m*x1-y1)/m
+rm(m,y1,y2,x1,x2) # removed to prevent confusions as used in later chunks
+
+dintercept.pointestimate = ((1-tau.hagg[firstbelow1-1])*
+(r.mid[firstbelow1]-r.mid[firstbelow1-1])/
+(tau.hagg[firstbelow1]-tau.hagg[firstbelow1-1]))+r.mid[firstbelow1-1]
+dintercept.pointestimate
+save(dintercept.pointestimate, file = "dintercept.pointestimate.RData")
+
+setwd("/home/tim/measles/figs")
+pdf("nbstrap.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
+plot(NULL, xlim = c(0,100), log="y", ylim = c(min(tauCItmp2500noinfs),
+max(tauCItmp2500noinfs)), xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", 
+ylab = "", xlab = "")
+mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
+mtext(latex2exp::TeX(
+'Distance band midpoint (1/2$(d_l + d_m)$) at 2m increments,'), side=1, line=3, cex = 1.5)
+mtext(latex2exp::TeX(
+'from an average case (m)'), side=1, line=4, cex = 1.5)
+for (i in 1:2500) {
+  lines(r.mid, tauCItmp2500noinfs[i,], col = scales::alpha("grey", alpha = 0.2), lwd = 4)
+}
+for (i in 1:100) {
+  lines(r.mid, tauCItmp100noinfs[i,], col = scales::alpha("green", alpha = 0.2), lwd = 4)
+}
+axis(2, las=1, at=c(0.5,1,2,4,8,16,32,64,93), labels = c("0·5","1","2·0","4·0","8·0",
+"16·0","32·0","64·0","93·0"), lwd = 4)
+axis(1, lwd = 4)
+lines(x = c(0,100), y = c(1,1), lty = 2, lwd = 4) # as abline seems to overlap
+par(lend=1);
+lines(x = as.numeric(quantile(d.envelope2500, probs = c(0.025,0.975))), y=c(1.03,1.03),
+type = "l", lwd = 20, col = "red")
+lines(x = as.numeric(quantile(d.envelope100, probs = c(0.025,0.975))), y=c(0.97,0.97), 
+type = "l", lwd = 20, col = "blue")
+lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lwd = 8)
+lines(r.mid, tau.hagg, lwd = 4)
+legend(x = 40, y = 32, 
+legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate & $\\hat{D}$'),
+latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$ bootstrap estimate (N=2500)'), 
+latex2exp::TeX('    $\\bullet$  95% percentile CI of $\\underline{D}$'), 
+latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$ bootstrap estimate (N=100)'), 
+latex2exp::TeX('    $\\bullet$  95% percentile CI of $\\underline{D}$'),
+latex2exp::TeX('$\\tau = 1$')), col=c("black", "grey", "red", "green", "blue", "black"),
+lty=c(1,1,1,1,1,2), lwd = c(6,6,30,6,30,6), pch = c(124,256,256,256,256,256), cex=1.05, 
+yjust = 0.5)
+dev.off()
+```
+![Bootstrap simulations versus the point estimate for 100 or 2,500 bootstrap estimates](./figs/nbstrap.pdf){width=100%}
+
+Bizarrely the number of bootstrap estimates of 100 versus 2500 don't appear to impact the precision of `d.envelope`; both CIs used 100% of simulations. We conjecture that as 100 is similar to the number of cases (188), it can adequately represent the data.
+
+```{r d envelope distribution, eval = F}
+setwd("/home/tim/measles/intrmd8")
+load("d.envelope100.RData")
+load("d.envelope2500.RData")
+load("dintercept.pointestimate.RData")
+setwd("/home/tim/measles/figs")
+pdf("bootstraphist.pdf")
+par(mfrow = c(1,2))
+hist(d.envelope100, breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", main = "N=100", 
+xlab = latex2exp::TeX('Samples of $\\hat{D} (m)'))
+abline(v = dintercept.pointestimate, lty = 2, lwd = 2, col = "red")
+abline(v = mean(d.envelope100), lty = 2, lwd = 2, col = "green")
+abline(v = median(d.envelope100), lty = 2, lwd = 2, col = "blue")
+hist(d.envelope2500, breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", ylab = NULL, 
+main = "N=2500", xlab = latex2exp::TeX('Samples of $\\hat{D} (m)'))
+abline(v = dintercept.pointestimate, lty = 2, lwd = 2, col = "red")
+abline(v = mean(d.envelope2500), lty = 2, lwd = 2, col = "green")
+abline(v = median(d.envelope2500), lty = 2, lwd = 2, col = "blue")
+dev.off()
+```
+![Histogram of the $\hat{D}$ estimates by number of bootstrap estimates](./figs/bootstraphist.pdf){width=100%}
+
+The asymmetric distribution of the $\hat{d}$ estimates suggests the usual *percentile confidence interval* would be a bad choice.
+
+## BCa confidence interval
+A better alternative is the *BCa confidence interval* using `coxed::bca()` which takes a few seconds extra to run; we decide to test for N=100 or N=2500 as it may be more sensitive to low numbers of bootstrap samples than the percentile CI. 
+
+## Spatial bootstrap
+
+### Number of bootstrap estimates & bootstrap sampling method
+```{r CI construction, eval=F, warning=FALSE}
+setwd("/home/tim/measles/intrmd8")
+load("d.envelope2500.RData")
+load("d.envelope100.RData")
+load("dintercept.pointestimate.RData")
+load("tauCItmp2500noinfs.RData")
+load("tau.hagg.RData")
+
+BCa.ci.2500 = coxed::bca(d.envelope2500, conf.level = 0.95)
+percentile.ci.2500 = quantile(d.envelope2500, probs=c(0.025, 0.975), type = 7)
+
+# compute modified marked point bootstrap for 100 and 2500 bootstrap estimates using----
+# percentile or BCa CIs
+set.seed(seed = 5) # set at seed = 5 to compare with tauCItmp2500noinfs
+ptm = proc.time()
+tauCI2500lohv2 = summonTauBstraplohv2(X.region = as.matrix(hag.dat), r.min = r.min, 
+r.max = r.max, bootiters = 2500, T1 = 0, T2 = 14)
+proc.time() - ptm # 16·542s
+d.envelope2500lohv2 = ciIntercept(2500, mid.set = r.mid, tau.sim = tauCI2500lohv2)
+setwd("/home/tim/measles/intrmd8")
+save(d.envelope2500lohv2, file = "d.envelope2500lohv2.RData")
+set.seed(seed = 6) # set at seed = 6 to compare with tauCItmp100noinfs
+tauCI100lohv2 = summonTauBstraplohv2(X.region = as.matrix(hag.dat), r.min = r.min, 
+r.max = r.max, bootiters = 100, T1 = 0, T2 = 14)
+d.envelope100lohv2 = ciIntercept(100, mid.set = r.mid, tau.sim = tauCI100lohv2)
+
+BCa.ci.lohv2.2500 = coxed::bca(d.envelope2500lohv2, conf.level = 0.95)
+percentile.ci.lohv2.2500 = quantile(d.envelope2500lohv2, probs=c(0.025, 0.975), type = 7)
+BCa.ci.lohv2.100 = coxed::bca(d.envelope100lohv2, conf.level = 0.95)
+percentile.ci.lohv2.100 = quantile(d.envelope100lohv2, probs=c(0.025, 0.975), type = 7)
+
+dintercept.pointestimate
+BCa.ci.2500
+percentile.ci.2500
+BCa.ci.lohv2.2500
+percentile.ci.lohv2.2500
+
+setwd("/home/tim/measles/figs")
+pdf("bootstraphistv2.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
+par(mfrow = c(2,2))
+hist(d.envelope100,breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", ylab = "Frequency", 
+main = "N=100, resampled-index", xlab = NULL, lwd = 4)
+fig_label("a", cex = 3, region = "plot", lwd = 4)
+lines(x = coxed::bca(d.envelope100, 0.95), y = c(0,0), lty = 1, lwd = 18, col = "purple")
+abline(v = dintercept.pointestimate, lty = 2, lwd = 12, col = "red")
+abline(v = mean(d.envelope100), lty = 2, lwd = 8, col = "green")
+abline(v = median(d.envelope100), lty = 2, lwd = 8, col = "blue")
+hist(d.envelope100lohv2,breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", ylab = NULL, 
+main = "N=100, modified marked point", xlab = NULL, lwd = 4)
+fig_label("b", cex = 3, region = "plot", lwd = 4)
+lines(x = coxed::bca(d.envelope100lohv2, 0.95), y = c(0,0), lty = 1, lwd = 18, col = "purple")
+abline(v = dintercept.pointestimate, lty = 2, lwd = 12, col = "red")
+abline(v = mean(d.envelope100lohv2), lty = 2, lwd = 8, col = "green")
+abline(v = median(d.envelope100lohv2), lty = 2, lwd = 8, col = "blue")
+hist(d.envelope2500,breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", ylab = "Frequency",
+main = "N=2500, resampled-index", 
+xlab = latex2exp::TeX('$\\underline{D}$ (m)'), lwd = 4)
+fig_label("c", cex = 3, region = "plot", lwd = 4)
+lines(x = coxed::bca(d.envelope2500, conf.level = 0.95), y = c(0,0), lty = 1, lwd = 18, col = "purple")
+abline(v = dintercept.pointestimate, lty = 2, lwd = 12, col = "red")
+abline(v = mean(d.envelope2500), lty = 2, lwd = 8, col = "green")
+abline(v = median(d.envelope2500), lty = 2, lwd = 8, col = "blue")
+hist(d.envelope2500lohv2,breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", ylab = NULL, 
+main = "N=2500, modified marked point", xlab = latex2exp::TeX('$\\underline{D}$ (m)'), lwd = 4)
+fig_label("d", cex = 3, region = "plot", lwd = 4)
+lines(x = coxed::bca(d.envelope2500lohv2), y = c(0,0), lty = 1, lwd = 18, col = "purple")
+abline(v = dintercept.pointestimate, lty = 2, lwd = 12, col = "red")
+abline(v = mean(d.envelope2500lohv2), lty = 2, lwd = 8, col = "green")
+abline(v = median(d.envelope2500lohv2), lty = 2, lwd = 8, col = "blue")
+dev.off()
+
+# graphical abstract version----
+pdf("bootstraphistv2.ga.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
+hist(d.envelope2500lohv2,breaks = seq.int(10,55,7.5), xaxs = "i", yaxs = "i", ylab = NULL, yaxt = "n", main = NULL, xlab = latex2exp::TeX('$\\underline{D}$ (m)'), cex = 2, cex.lab = 2, lwd = 4)
+axis(2, las = 1, at = c(0,800), labels = c("0","800"), lwd = 4)
+abline(v = dintercept.pointestimate, lty = 2, lwd = 16, col = "black")
+dev.off()
+coxed::bca(d.envelope2500, conf.level = 0.95)
+coxed::bca(d.envelope2500lohv2, conf.level = 0.95)
+
+pdf("nbstrapv2.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
+plot(NULL, xlim = c(0,100), log="y", ylim = c(0.5,max(tauCItmp2500noinfs,tauCI2500lohv2)),
+xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", xlab = "", lwd = 4)
+mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
+mtext(latex2exp::TeX(
+'Distance band midpoint (1/2$(d_l + d_m)$) at 2m increments,'), side=1, line=3, cex = 1.5)
+mtext(latex2exp::TeX(
+'from an average case (m)'), side=1, line=4, cex = 1.5)
+
+for (i in 1:2500) {
+  lines(r.mid, tauCItmp2500noinfs[i,], col = scales::alpha("grey", alpha = 0.2), lwd = 4)
+}
+for (i in 1:2500) {
+  lines(r.mid, tauCI2500lohv2[i,], col = scales::alpha("green", alpha = 0.2), lwd = 4)
+}
+axis(2,las=1,at=c(0.5,1,2,4,8,16,32,64,92), labels = c("0·5","1","2·0","4·0","8·0","16·0","32·0","64·0","92·0"), lwd = 4)
+axis(1, lwd = 4)
+lines(x = c(0,100),y = c(1,1),lty = 8) # as abline seems to overlap
+par(lend=1);
+lines(x = coxed::bca(d.envelope2500, conf.level = 0.95), y=c(1.03,1.03), type = "l", 
+lwd = 20, col = "red")
+lines(x = coxed::bca(d.envelope2500lohv2, conf.level = 0.95), y=c(0.97,0.97), type = "l",
+lwd = 20, col = "blue")
+lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lwd = 8)
+lines(r.mid,tau.hagg, lwd = 4)
+legend(x = 40, y = 32, 
+legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate & $\\hat{D}$'), latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$: resampled-index (N=2500)'), 
+latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'), 
+latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$: modified marked point (N=2500)'), 
+latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'),
+latex2exp::TeX('$\\tau = 1$')), 
+col=c("black", "grey", "red", "green", "blue", "black"), lty=c(1,1,1,1,1,2), 
+lwd = c(6,6,30,6,30,6), pch = c(124,256,256,256,256,256), cex=1.05, yjust = 0.5)
+dev.off()
+
+# graphical abstract version----
+pdf("nbstrapv2.ga.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
+plot(NULL, xlim = c(10,100), log="y", ylim = c(0.6,max(tauCI2500lohv2)),
+xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", 
+ylab = "", 
+xlab = latex2exp::TeX('$d$'), cex.lab = 2, lwd = 8)
+for (i in 1:2500) {
+  lines(r.mid, tauCI2500lohv2[i,], col = scales::alpha("green", alpha = 0.1), lwd = 8)
+}
+axis(2, las=1, at=c(0.6,1,5,10), labels = c("0·6","1","5·0","10·0"), cex = 2, lwd = 4)
+axis(1, las=1, at=c(10,50,100), labels = c("10","50","100"), cex = 2, lwd = 4)
+lines(x = c(0,100),y = c(1,1),lty = 2, lwd = 4) # as abline seems to overlap
+mtext(latex2exp::TeX('$\\tau$'), side = 2, cex = 2, las = 1, line = 2, lwd = 4)
+par(lend=1);
+lines(x = coxed::bca(d.envelope2500lohv2, conf.level = 0.95), y=c(1,1), type = "l",
+col = "blue", lwd = 20)
+lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.95,1.05), lwd = 8)
+lines(r.mid,tau.hagg, lwd = 4)
+dev.off()
+```
+![Histogram of the $\hat{D}$ estimates by number of bootstrap estimates and bootstrap sampling method. All four CIs used 100% of simulations](./figs/bootstraphistv2.pdf){width=100%}
+
+![Bootstrap simulations versus the point estimate for different bootstrap sampling methods using 2,500 bootstrap estimates; both CIs used 100% of simulations.](./figs/nbstrapv2.pdf){width=100%}
+
+It turns out that the number of bootstrap estimates does not make a large difference to the precision of BCa confidence intervals. They appear to be slightly narrower for N=2500. However as we know the $\hat{d}$ distribution is non-symmetric, theoretically the BCa CI should be relied upon more than the percentile CI.
+
+However the effect of the sampling method is far more obvious and goes to show that the *modified marked point bootstrap* (MMPB) method far outperforms the resampled index method, especially when used together with high numbers of sampling estimates where an interaction effect of these two implementations appears to be at play; interestingly the skew also reverses in this instance unlike the other three plots.
+
+As a result, MMPB CIs are much narrower (more precise).
+
+### Typical information loss when bootstrapping
+To indicate the typical information lost for the MMPB approach versus the resampled-index.
+```{r typicaldataloss}
+total = 0
+nsims = 1000
+cases = 188 # using the measles dataset as an example
+set.seed(seed = 9)
+for (i in 1:nsims) {
+  x = sample(cases, replace = T)
+  count = length(unique(x))
+  total = total + count
+}
+uniqueinds = round(total/nsims)
+original = cases*(cases - 1) # number of pairs involved in a point estimate calc
+ri = uniqueinds*(uniqueinds - 1)
+ri/original*100 # % of pairs involved in a resampled-index approach
+mmpb = uniqueinds*(cases - 1) 
+mmpb/original*100 # % of pairs involved in a modified marked point bootstrap approach
+```
+
+Lessler et al use the resampled-index as the standard bootstrap sampling method i.e. just sampling from the row indices with replacement to get their bootstrapped version of the data to apply the $\tau$ estimator to. This is then repeated N=`bootiters` times. Instead we use a modified form of Loh & Stein, to calculate local mark functions and take a bootstrap sample from these. More information in the main paper.
+
+### Modified marked point bootstrap vs Loh & Stein
+This chunk explains why MMPB is better than the standard Loh & Stein's implementation for the tau statistic.
+```{r spatialbstrap, eval=F, warning=FALSE}
+setwd("/home/tim/measles/intrmd8")
+load("tau.hagg.RData")
+load("d.envelope2500lohv2.RData")
+load("dintercept.pointestimate.RData")
+set.seed(seed = 10)
+ptm = proc.time()
+tausims.loh1 = summonTauBstraploh(as.matrix(hag.dat), r.min, r.max, 2500, T1= 0, T2 = 14)
+proc.time() - ptm # 13·3s
+tauCI.loh1 = summonTauCI(tausims.loh1, r.max)
+set.seed(seed = 10) # set as same seed for fair comparison
+ptm = proc.time()
+tausims.loh2 = summonTauBstraplohv2(as.matrix(hag.dat), r.min, r.max, 2500, T1= 0, 
+T2 = 14)
+proc.time() - ptm # 15·429s
+setwd("/home/tim/measles/intrmd8")
+save(tausims.loh2, file = "tausims.loh2.RData")
+tauCI.loh2 = summonTauCI(tausims.loh2, r.max)
+d.envelope2500lohv1 = ciIntercept(2500, mid.set = r.mid, tau.sim = tausims.loh1) 
+# warning only 77·3% of sims cross tau = 1
+
+setwd("/home/tim/measles/figs")
+pdf("loh.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
+plot(NULL, xlim = c(0,100), log="y", ylim = c(0.5,max(tausims.loh1,tausims.loh2)), 
+xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", 
+ylab = "", 
+xlab = "", lwd = 4)
+mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
+mtext(latex2exp::TeX(
+'Distance band midpoint (1/2$(d_l + d_m)$), at 2m increments'), side=1, line=3, 
+cex = 1.5)
+mtext(latex2exp::TeX(
+'from an average case (m). '), side=1, line=4, cex = 1.5)
+for (i in 1:2500) {
+  lines(r.mid, tausims.loh1[i,], col = scales::alpha("grey", alpha = 0.2), lwd = 4)
+}
+for (i in 1:2500) {
+  lines(r.mid, tausims.loh2[i,], col = scales::alpha("green", alpha = 0.2), lwd = 4)
+}
+axis(2,las=1,at=c(0.5,1,2,4,8,10), labels = c("0·5","1","2·0","4·0","8·0","10·0"), lwd = 4)
+axis(1, lwd = 4)
+lines(x = c(0,100),y = c(1,1),lty = 2, lwd = 4) # as abline seems to overlap
+par(lend=1);
+lines(x = coxed::bca(d.envelope2500lohv1, conf.level = 0.95), y=c(1.03,1.03), type = "l", 
+lwd = 20, col = "red")
+lines(x = coxed::bca(d.envelope2500lohv2, conf.level = 0.95), y=c(0.97,0.97), type = "l", 
+lwd = 20, col = "blue")
+lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lwd = 8)
+lines(r.mid,tau.hagg, lwd = 4)
+legend(x = 35, y = 4.5, 
+legend=c(latex2exp::TeX(
+'$\\hat{\\tau}$ point estimate & $\\hat{D}$'),
+latex2exp::TeX(
+'$\\hat{\\underline{\\tau}}^*$: Loh & Stein\'s marked point (N=2500)'), 
+latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'), 
+latex2exp::TeX(
+'$\\hat{\\underline{\\tau}}^*$: modified marked point (N=2500)'),
+latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'),
+latex2exp::TeX('$\\tau = 1$')), 
+col=c("black", "grey", "red", "green", "blue", "black"), lty=c(1,1,1,1,1,2), 
+lwd = c(6,6,30,6,30,6), pch = c(124,256,256,256,256,256), cex=1.05, yjust = 0.5)
+dev.off()
+```
+![Bootstrap simulations versus the point estimate for the MMPB sampling methods versus Loh & Stein, using 2,500 bootstrap estimates.](./figs/loh.pdf){width=100%}
+
+The CIs for Loh & Stein are unreliable as they are only formed from only 77.4% of simulations that are crossing $\tau = 1$, as a result it does not contain the point estimate line $\hat{\tau}(d)$. Loh & Stein's simulation lines poorly underestimate $\hat{\tau}$ for short distances and overestimate it for most medium to large distances.
+
+## Distance bands
+We do a simple analysis of the case distance distribution to propose a reasonable distance band set. We then compare this to the one used by Lessler et al in their measles analysis to see how much the estimates change.
+```{r distance bands, eval=F, warning=F}
+setwd("/home/tim/measles/intrmd8")
+load(file = "d.envelope2500lohv2.RData")
+load("tausims.loh2.RData")
+load("tau.hagg.RData")
+load("dintercept.pointestimate.RData")
+
+dist.cases = spatstat::crossdist(X$x.loc, X$y.loc, X$x.loc, X$y.loc)
+range(dist.cases)
+round(median(dist.cases))
+dist.cases = sort(dist.cases, decreasing = F)
+first.nonzero.dist = dist.cases[max(which(dist.cases==0))+1]
+dist.bands = c(0, floor(first.nonzero.dist), 
+seq.int(from = ceiling(first.nonzero.dist/5)*5,
+to = (ceiling(max(dist.cases)/5)*5),by = 5))
+hist(dist.cases, xlab = "Pairwise distance between cases (m)", breaks = dist.bands,
+main="Distance histogram (too few in 2nd dist band)", freq = F, xaxs = "i", yaxs = "i")
+dist.bands = c(0, floor(first.nonzero.dist), 
+seq.int(from = 15, to = (ceiling(max(dist.cases)/5)*5),by = 5))
+hist(dist.cases, xlab = "Pairwise distance between cases (m)", breaks = dist.bands,
+main="Distance histogram (ignoring pairs separated by >200m)", freq = F, xaxs = "i", 
+yaxs = "i")
+abline(v = 200)
+
+# this would be a reasonable distance band set to start with i.e. 5m increments seems
+# reasonable as it is the size of a very small house and one would not expect the disease
+# dynamics to change on a spatial scale smaller than this.
+# however from the descriptive analysis of the case distance distribution we join some
+# distance bands together:
+dist.bands = c(0, floor(first.nonzero.dist), seq.int(from = 15,to = 200,by = 5))
+tau.newdb = summonTau(as.matrix(hag.dat), r.min = sort(rev(dist.bands)[-1]), 
+r.max = dist.bands[-1], T1 = 0, T2 = 14)
+
+set.seed(seed = 12)
+ptm = proc.time()
+tau.sims.newdb = summonTauBstraplohv2(X.region = as.matrix(hag.dat), 
+r.min = sort(rev(dist.bands)[-1]), r.max = dist.bands[-1], bootiters = 2500, 
+T1= 0, T2 = 14)
+proc.time() - ptm # 11·523s
+mid.newdb = 0.5*(sort(rev(dist.bands)[-1]) + dist.bands[-1])
+d.envelope2500lohv2.newdb = ciIntercept(2500, mid.set = mid.newdb, 
+tau.sim = tau.sims.newdb)
+firstbelow1.newdb = which(tau.newdb < 1)[1]
+y1 = tau.newdb[firstbelow1.newdb-1]
+y2 = tau.newdb[firstbelow1.newdb]
+x1 = mid.newdb[firstbelow1.newdb-1]
+x2 = mid.newdb[firstbelow1.newdb]
+m = (y2-y1)/(x2-x1)
+dintercept.pointestimate.newdb = (1+m*x1-y1)/m
+
+coxed::bca(d.envelope2500lohv2.newdb, conf.level = 0.95)
+coxed::bca(d.envelope2500lohv2, conf.level = 0.95)
+
+hist(d.envelope2500lohv2.newdb) # any CI struggles to contain the point estimate due to
+# the strongly bimodal distribution of D for the non-overlapping distance bands.
+hist(d.envelope2500lohv2)
+
+setwd("/home/tim/measles/figs")
+pdf("distband.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
+plot(NULL, xlim = c(0,100), log="y", ylim = c(0.3, (max(tausims.loh2[,1], 
+tau.sims.newdb[,1])+4)), xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", 
+ylab = "", 
+xlab = "", lwd = 4)
+mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
+mtext(latex2exp::TeX(
+'Distance band midpoint (1/2$(d_l + d_m)$),'), side=1, line=3, cex = 1.5)
+mtext(latex2exp::TeX(
+'from an average case (m). See caption for details.'), side=1, line=4, cex = 1.5)
+for (i in 1:2500) {
+  lines(mid.newdb, tau.sims.newdb[i,], col = scales::alpha("grey", 
+  alpha = 0.2), lwd = 4)
+}
+for (i in 1:2500) {
+  lines(r.mid, tausims.loh2[i,], col = scales::alpha("green", alpha = 0.2), lwd = 4)
+}
+axis(2, las=1, at=c(0.3,1,2,4,11), labels = c("0·3","1","2·0","4·0","11·0"), lwd = 4)
+axis(1, lwd = 4)
+lines(x = c(0,100), y = c(1,1), lty = 2, lwd = 4) # as abline seems to overlap
+par(lend=1);
+lines(x = coxed::bca(d.envelope2500lohv2.newdb, conf.level = 0.95), y=c(1.03,1.03),
+type = "l",lwd = 20, col = "red")
+lines(x = coxed::bca(d.envelope2500lohv2, conf.level = 0.95), y=c(0.97,0.97),type = "l",
+lwd = 20, col = "blue")
+lines(x=c(dintercept.pointestimate.newdb,dintercept.pointestimate.newdb), y = c(0.9,1.1), lwd = 8)
+lines(r.mid,tau.hagg, col = "black", lty = 1, lwd = 4)
+lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lwd = 8, col = "gray30")
+lines(mid.newdb, tau.newdb, col = "black", lty = 2, lwd = 4)
+legend(x = 20, y = 6.5, 
+legend=c(latex2exp::TeX(
+'$\\hat{\\tau}$ point estimate & $\\hat{D}$ (overlapping dist. band)'), latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$ simulations'), 
+latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'), 
+latex2exp::TeX(
+'$\\hat{\\tau}$ point estimate & $\\hat{D}$ (non-overlapping dist. band)'),
+latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$ simulations'), 
+latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'),
+latex2exp::TeX('$\\tau = 1$')), 
+col=c("black", "green", "blue", "black", "grey", "red", "black"), lty=c(1,1,1,2,1,1,2), 
+lwd = c(6,6,30,6,6,30,6), pch = c(124,256,256,124,256,256,256), cex=1.05, yjust = 0.5)
+dev.off()
+```
+![Bootstrap simulations versus the point estimate for a reasonably-proposed example non-overlapping distance band set versus the overlapping one used by Lessler et al in their measles analysis.](./figs/distband.pdf){width=100%}
+
+Cases are separated from 0m to just over 300m with a median of 108m. Using distance bands starting at 0m (within household) and then including the first non-zero distance separations from 7·9m to 10m and in 5m increments up to 200m, does not properly cover the [7·9,10] band properly which may affect the estimation. We therefore combine the second and third distance bands to get {0,7,15,20,25,...,200}. We end the distance bands at 200m as there the number of pairs fall off after this point. This now forms the distance band set for our analysis---we now compute `tau.sims.newdb` and compare with Lessler's analysis. 
+
+The effect of the distance band sets is enormous in terms of the precision of the `d.envelope` CI, and also where the point estimate intersects $\tau = 1$; both CIs used 100% of simulations. The non-overlapping distance band set (as expected) produces a more erratic tau estimate. From this graph it would seem that for understanding trends the overlapping statistic is better but it is unclear how to construct this as there are infinite combinations for its construction too!
+
+```{r centralnullfig, eval=F}
+# test set----
+d2.set = seq.int(0,10)
+j.max = length(d2.set)
+n.sim = 100
+tau.sim = matrix(NA,n.sim,j.max)
+set.seed(seed = 30)
+for (i in 1:n.sim) {
+  alpha = rnorm(1,1,0.1)
+  noise = rnorm(j.max,0,0.1)
+  tau.sim[i,] = exp(-0.25*d2.set*alpha) + rep.int(0.7,j.max) + noise
+}
+null.sim = matrix(NA,n.sim,j.max)
+set.seed(seed = 31)
+for (i in 1:n.sim) {
+  noise = rnorm(j.max,0,0.1)
+  null.sim[i,] = 1 + noise
+}
+
+# get envelope----
+central.env = apply(tau.sim,2, quantile, probs = c(0.025,0.975))
+null.env = apply(null.sim,2, quantile, probs = c(0.025,0.975))
+
+# plot test set and envelope----
+setwd("figs/")
+pdf("centralnull.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
+par(mfrow = c(1,2))
+plot(NULL, NULL, xlim = c(0,10), ylim = c(0,2), type = "l", xlab = "d", ylab = latex2exp::TeX('$\\tau (d)$'), col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", lwd = 4)
+axis(1, labels = c(0,2,latex2exp::TeX('$\\hat{D}$'),4,6,8,10), at = c(0,2,2.7,4,6,8,10), lwd = 4)
+axis(2, labels = c("0","0·5","1","1·5","2·0"), at = c(0,0.5,1,1.5,2.0), lwd = 4)
+for (i in 1:100) {
+  lines(seq.int(0,10), tau.sim[i,], col = scales::alpha("grey",0.2), lwd = 4)
+}
+abline(h=1,col = "red", lwd = 4)
+lines(seq.int(0,10), central.env[1,], type = "l", lwd = 4)
+lines(seq.int(0,10), central.env[2,], type = "l", lwd = 4)
+abline(v = 2.7, col = "blue", lty = 2, lwd = 4)
+
+plot(NULL, NULL, xlim = c(0,10), ylim = c(0,2), type = "l", xlab = "d", ylab = "", col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", lwd = 4)
+axis(1, labels = c(0,2,latex2exp::TeX('$\\hat{D}$'),5,6,8,10), at = c(0,2,3.55,5,6,8,10), lwd = 4)
+axis(2, labels = c("0","0·5","1","1·5","2·0"), at = c(0,0.5,1,1.5,2.0), lwd = 4)
+for (i in 1:100) {
+  lines(seq.int(0,10), null.sim[i,], col = scales::alpha("grey",0.2), lwd = 4)
+}
+abline(h=1, col = "red", lwd = 4)
+lines(seq.int(0,10), null.env[1,], type = "l", lwd = 4)
+lines(seq.int(0,10), null.env[2,], type = "l", lwd = 4)
+lines(seq.int(0,10), tau.sim[1,], type = "l", lwd = 4, col = "blue")
+abline(v = 3.55, col = "blue", lty = 2, lwd = 4)
+dev.off()
+```
+![Diagram showing how reviewed papers would hypothesis test and estimate parameters simulatenously using central or null envelopes.](./figs/centralnull.pdf){width=100%}
+***
+
+# References {#references}
+For a comprehensive list of references of the works that contributed to the study please consult the main paper.
