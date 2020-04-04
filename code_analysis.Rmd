@@ -1,7 +1,7 @@
 ---
 title: "Analysis code"
 author: "written by Timothy M Pollington and reviewed by Lloyd AC Chapman"
-date: "November 2019"
+date: "April 2020"
 output: 
   pdf_document:
     number_sections: true
@@ -13,7 +13,6 @@ bibliography: rmarkdown.bib
 ***
 
 # Prerequisites before your first knit of this document
-**Correct knitting of this document and use of the tau functions [(section link)](#taufunctions) requires cloning the [GitHub repository](https://github.com/t-pollington/measles) into an RStudio project (RStudio cmds: `File > New Project > Version Control > Git > repository URL = https://github.com/t-pollington/measles!makepublic`) (prior to publication this repo can be accessed via https://warwick.ac.uk/fac/sci/mathsys/people/students/2015intake/pollington_tim/measles-master.zip) and then building the functions necessary in RStudio before use (RStudio cmds: `Build > Configure Build Tools` and setting package directory to `yourchoice/measles/tauodds` and then in the top-right Build pane choose `Install and Restart`); this is why we require `devtools` package to be installed earlier. Sometimes if an error appears when building in RStudio's Build pane then you will need to check your RStudio is running the 64-bit R in Tools > Global Options > General> Basic tab > R Sessions > R version box. Also in the Build pane just choosing More > Clean & Rebuild can fix the problem.**
 
 You may also need to install the following R packages and be running RStudio `as administrator` to install them (this is useful anyway for modifying the file structure of your cloned repository). 
 ```{r prerequisites}
@@ -22,14 +21,14 @@ You may also need to install the following R packages and be running RStudio `as
 # You'll need to copy and paste them uncommented into your R console to run.
 ```
 
-If you haven't compiled LaTeX before on your Windows OS then downloading the `tinytex` package and running `tinytex::install_tinytex()` can help. Also Replace & Find in RStudio (`Ctrl+Shift+J`) the file paths `/home/tim/measles/figs` & `/home/tim/measles/intrmd8` that may require amending according to the system filepath that your cloned repository is in.
+If you haven't compiled LaTeX before on your Windows OS then downloading the `tinytex` package and running `tinytex::install_tinytex()` can help. Also Replace & Find in RStudio (`Ctrl+Shift+J`) the file paths `/home/tim/measles/figs` & `/home/tim/measles/intrmd8` that may require amending (these are for a Linux OS) according to the system filepath that your cloned repository is in.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Introduction
-Our code examines how the different aspects of *tau statistic* implementation may affect the *range of spatiotemporal clustering*, by comparing against the standard analysis [@Lessler2016]---a measles dataset[@Neal2004;@Oesterle1992;@Pfeilsticker1863] with the time-relatedness interval defined as $[T_1=0, T_2=14]$ and an overlapping distance band set. 
+Our code examines *graphical hypothesis testing* of the *tau statistic* and how different aspects of implementation may affect the *endpoint of spatiotemporal clustering* and its *precision*, by comparing against the standard analysis [@Lessler2016]---a measles dataset[@Neal2004;@Oesterle1992;@Pfeilsticker1863] with the time-relatedness interval defined as $[T_1=0, T_2=14]$ and an overlapping distance band set. 
 # How to use this document
 This `.Rmd` document can be *knitted* in `RStudio`[@RStudio] to output a results `.pdf` file for easier printing or device accessibility. It is composed of chunks that all run when the document is knit to print the results, or they can be run separately in `RStudio` (note: they may depend on variables from earlier chunks having been run). A References section is provided [(section link)](#references). Other sections are cross-linked throughout using "(section link)" internal links.
 
