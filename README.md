@@ -12,13 +12,7 @@ As these analysis notes are an integral part of the paper and do not have their 
  doi={10.1016/j.spasta.2020.100438},  
 }
 
-Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
-
-This work is licensed under a [Creative Commons Attribution 4.0 International
+[![CC BY 4.0][cc-by-shield]][cc-by] This work is licensed under a [Creative Commons Attribution 4.0 International
 License][cc-by].
-
-[![CC BY 4.0][cc-by-image]][cc-by]
-
 [cc-by]: http://creativecommons.org/licenses/by/4.0/
-[cc-by-image]: https://i.creativecommons.org/l/by/4.0/88x31.png
 [cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
