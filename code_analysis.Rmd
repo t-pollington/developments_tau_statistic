@@ -26,6 +26,20 @@ Please kindly cite as:
 
 ![](licence.pdf) This work is licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).  
 
+# Introduction
+Our code implements *graphical hypothesis testing* of the *tau statistic* and examines how different aspects of implementation may affect the *endpoint of spatiotemporal clustering* and its *precision*, by comparing against the standard analysis [@Lessler2016]---a measles dataset[@Pfeilsticker1863;@Oesterle1992;@Neal2004] with the time-relatedness interval defined as $[T_1=0, T_2=14]$ and an overlapping distance band set. 
+
+# How to use this document
+This `.Rmd` document can be *knitted* in *RStudio*[@RStudio] to output a results `.pdf` file for easier printing or device accessibility. It is composed of chunks that all run when the document is knit to print the results, or they can be run separately in *RStudio* (note: they may depend on variables from earlier chunks having been run). A [(References section)](#references) is provided . Other sections are cross-linked throughout using internal links.
+
+Cloning this [GitHub repository](https://github.com/t-pollington/developments_tau_statistic) makes sense if you want to easily amend code. If you find errors please contact us using an Issue request before doing a Pull request to save you time, in case we can easily answer it first. 
+
+For reproducibility we provide the `set.seed` numbers for initialising any use of random number generations in the analysis from jittering to bootstrap sampling. Major outputs are also saved in the `/intrmd8`.
+
+For computer-intensive chunks we indicate typical runtimes$^1$ and load the pre-run graph instead, and use `eval = F` to skip the chunk; this can be relaxed by changing to `eval = T` for the chunk(s) of interest. 
+^[based on a Dell™ Precision M2800 laptop with Intel® Core™ i7-4810MQ CPU @ 2·80GHz × 8 with 16MB RAM]
+We also do data checks and tests to show the code runs as expected. All code was run in R v3.6.3[@R] on *RStudio*® v1.2.5033 in Microsoft® Windows® 10.0.18363. 
+
 # Prerequisites before your first knit of this document
 
 You will need to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/), the following R packages and be running *RStudio* `as administrator`; this is useful too in modifying the file structure of your cloned repository from within *RStudio*. 
@@ -35,30 +49,17 @@ You will need to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/
 # You'll need to copy and paste them (uncommented) into your R console to run.
 ```
 
-Correct knitting of this document requires cloning its GitHub repository into an RStudio 
-project (RStudio cmds: `File > New Project > Version Control > Git > repository URL =
-https://github.com/t-pollington/developments_tau_statistic`). Furthermore to use the [tau functions](#taufunctions) the `tauodds` (internal) package from within this repository needs to be built and installed before use (RStudio cmds: `Build > Configure Build Tools` and setting package directory to `.../measles/tauodds` and then in the top-right Build pane choose `Install and Restart`); this is why we require `devtools` package. Sometimes if an error appears when building in RStudio's Build pane then you will need to check your RStudio is running the 64-bit R in `Tools > Global Options > General> Basic tab > R Sessions > R version box`. Also in the Build pane just choosing `More > Clean & Rebuild` can fix the problem. We hope that these amended tau functions will be integrated into `IDSpatialStats` package, via pull requests by us over the course of the next few months.  
+Correct knitting of this document requires cloning its GitHub repository into an *RStudio* 
+project (*RStudio* cmds: `File > New Project > Version Control > Git > repository URL = `
+`https://github.com/t-pollington/developments_tau_statistic`). Furthermore to use the [tau functions](#taufunctions) the `tauodds` (internal) package from within this repository needs to be built and installed before use (*RStudio* cmds: `Build > Configure Build Tools` and setting package directory to `.../measles/tauodds` and then in the top-right Build pane choose `Install and Restart`); this is why we require `devtools` package. Sometimes if an error appears when building in *RStudio*'s Build pane then you will need to check *RStudio* is running the 64-bit R in `Tools > Global Options > General> Basic tab > R Sessions > R version box`. Also in the Build pane just choosing `More > Clean & Rebuild` can fix the problem. We hope that these amended tau functions will be integrated into `IDSpatialStats` package, via pull requests by us over the course of the next few months.  
 
 If you haven't compiled LaTeX before on your Windows OS then downloading the `tinytex` package and running `tinytex::install_tinytex()` can help. Also amend the `setup` chunk according to your filepaths for the repository, note these are often different across OS. 
 
 ```{r setup, include=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
-figspath = "/home/tim/measles/figs"
-intrmd8path = "/home/tim/measles/intrmd8"
+figspath = "C:/Users/mochu/Documents/GitHub/developments_tau_statistic/figs"
+intrmd8path = "C:/Users/mochu/Documents/GitHub/developments_tau_statistic/intrmd8"
 ```
-
-# Introduction
-Our code examines *graphical hypothesis testing* of the *tau statistic* and how different aspects of implementation may affect the *endpoint of spatiotemporal clustering* and its *precision*, by comparing against the standard analysis [@Lessler2016]---a measles dataset[@Neal2004;@Oesterle1992;@Pfeilsticker1863] with the time-relatedness interval defined as $[T_1=0, T_2=14]$ and an overlapping distance band set. 
-# How to use this document
-This `.Rmd` document can be *knitted* in `RStudio`[@RStudio] to output a results `.pdf` file for easier printing or device accessibility. It is composed of chunks that all run when the document is knit to print the results, or they can be run separately in `RStudio` (note: they may depend on variables from earlier chunks having been run). A References section is provided [(section link)](#references). Other sections are cross-linked throughout using "(section link)" internal links.
-
-Cloning our [GitHub repository](https://github.com/t-pollington/measles) makes sense if you want to easily amend code or find errors. Please contact before doing a Pull request to save you time in case we can answer the error you have found. 
-
-For reproducibility we provide the `set.seed` numbers for initialising any use of random number generations in the analysis from jittering to bootstrap sampling. Major outputs are also saved.
-
-For computer-intensive chunks we indicate typical runtimes$^1$ and load the pre-run graph instead, and use `eval = F` to skip the chunk; this can be relaxed by changing to `eval = T` for the chunk(s) of interest. 
-^[based on a Dell™ Precision M2800 laptop with Intel® Core™ i7-4810MQ CPU @ 2·80GHz × 8 with 16MB RAM]
-We also do data checks and tests to show the code runs as expected. All code was run in R v3·6·1[@R] on RStudio® v1·2·5001 in Linux® Mint™ 19·2 Tina operating system. 
 
 # Descriptive analyses on the Hagelloch measles dataset
 
@@ -78,7 +79,7 @@ dim(X)
 str(X) # data types as expected
 length(unique(X$HN)) # 56 case hhlds
 length(unique(X$PN)) == length(X$PN) # all PN unique. PASS
-apply(X,2,range) # no gaps in the PNs PASS, reasonable ranges for the others
+apply(X,2,range) # no gaps in the PNs and reasonable ranges for the others PASS
 sum(is.na(X)) + sum(is.null(X)) + sum(apply(X, 2, is.nan)) # PASS
 # Remove PN as all found to be unique.
 X = subset(hagelloch.df, select = c("x.loc","y.loc","tPRO","HN"))
@@ -89,13 +90,6 @@ X = subset(hagelloch.df, select = c("x.loc","y.loc","tPRO","HN"))
 SI.mean = 14.9 # mean serial interval (days) from Cori et al 2013, Table 1, p1507
 tPRO.range = c(floor(min(X$tPRO)), ceiling(max(X$tPRO)))
 round(diff(range(X$tPRO))/SI.mean) # approximate number of generations covered
-hist(X$tPRO, xlab="Onset time (days)", ylab="Measles cases", main=NULL,
-breaks = seq.int(tPRO.range[1], tPRO.range[2], by = 1),xaxs="i", yaxs="i", col = "black", 
-xaxt = "n",
-panel.first = {
-  grid(NA,10,lty = 3,lwd = 0.5, col = "grey")
-  })
-axis(1, at=c(0,23,47,60,87), labels=c(0,23,47,60,87), col.axis="black", las=1)
 ```
 The epidemic lasts nearly 3 months which could have covered up to ~6 disease generations based on estimated serial intervals for this specific epidemic[@Cori2013]. Five generations can be discerned from the epidemic curve of this propagated epidemic. 
 
@@ -112,23 +106,28 @@ axis(1, at=c(0,23,47,60,80,87), labels=c(0,23,47,60,80,""), col.axis="black", la
 dev.off()
 ```
 
+![Epidemic curve of the 188 measles cases in Hagelloch in 1861.](./figs/Re.pdf){width=100%}
+
 ## Spatiotemporal plots
 ```{r spatiotemporal plot, eval=F}
 # generate STplot----
 # define palette----
 set.seed(seed = 2)
 df = data.frame(x = X$x.loc, y = X$y.loc, t = X$tPRO)
-rbPal = colorRampPalette(colors = c("red","orange","yellow","green","blue","purple","violet")) # plot rainbow colours
+rbPal = colorRampPalette(colors = c("red","orange","yellow","green","blue","purple",
+                                    "violet")) # plot rainbow colours
 df$col = rbPal(10)[as.numeric(cut(df$t, breaks = 10))] # coloured deciles
 
 setwd(figspath)
 pdf("STplot.pdf")
 # jitter in x & y separately, using Uniform[-2,+2] distribution .
+par(las = 1)
 plot(jitter(X$x.loc,amount = 5), jitter(X$y.loc,amount = 5), col = df$col, main = NULL, 
 xlab = "", ylab = "", xaxs="i", yaxs="i", 
 pch = 20, cex = 2, cex.lab = 1.5, xlim = c((min(X$x.loc)-5),(max(X$x.loc)+5)), 
 ylim = c((min(X$y.loc)-5),(max(X$y.loc)+5)))
-mtext(latex2exp::TeX('$y$ (m)'), side=2, line=2, cex = 1.5)
+par(las = 0)
+mtext(latex2exp::TeX('$y$ (m)'), side=2, line=3, cex = 1.5, padj = 1)
 mtext(latex2exp::TeX('$x$ (m)'), side=1, line=3, cex = 1.5)
 par(xpd=TRUE)
 legend.text = c("1-9","10-19","20-28","29-38","39-47","48-57","58-67","68-76","77-86",
