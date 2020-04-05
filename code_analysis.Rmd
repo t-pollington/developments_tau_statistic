@@ -16,7 +16,7 @@ bibliography: rmarkdown.bib
 # Citing this resource
 Please kindly cite as:
 
-> @ARTICLE{Pollington2020,
+> \@ARTICLE{Pollington2020,
  author={Pollington, T.M. and Tildesley, M.J. and Hollingsworth, T.D. and Chapman, L.A.C.},  
  year={2020},  
  title={{Developments in statistical inference when assessing spatiotemporal disease clustering with the tau statistic}},  
@@ -24,29 +24,27 @@ Please kindly cite as:
  doi={10.1016/j.spasta.2020.100438},  
 }
 
-[![CC BY 4.0][cc-by-shield]][cc-by]  
-
-This work is licensed under a [Creative Commons Attribution 4.0 International License][cc-by].  
-
-[cc-by]: http://creativecommons.org/licenses/by/4.0/  
-[cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
+![](licence.pdf) This work is licensed under a [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/).  
 
 # Prerequisites before your first knit of this document
 
-You will need to install the following R packages and be running *RStudio* `as administrator`; this is useful anyway for modifying the file structure of your cloned repository from within *RStudio*. 
+You will need to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/), the following R packages and be running *RStudio* `as administrator`; this is useful too in modifying the file structure of your cloned repository from within *RStudio*. 
 ```{r prerequisites}
 # install.packages(pkgs = c("IDSpatialStats","surveillance","latex2exp",
 # "scales","GET","devtools","coxed"))
-# You'll need to copy and paste them uncommented into your R console to run.
+# You'll need to copy and paste them (uncommented) into your R console to run.
 ```
 
-Correct knitting of this document requires cloning this GitHub repository into an RStudio project (RStudio cmds: `File > New Project > Version Control > Git > repository URL =
-https://github.com/t-pollington/developments_tau_statistic`). Furthermore to use the [tau functions](#taufunctions) the `tauodds` (internal) package from within this repo needs to be built and installed before use (RStudio cmds: `Build > Configure Build Tools` and setting package directory to `yourchoice/measles/tauodds` and then in the top-right Build pane choose `Install and Restart`); this is why we require `devtools` package. Sometimes if an error appears when building in RStudio's Build pane then you will need to check your RStudio is running the 64-bit R in `Tools > Global Options > General> Basic tab > R Sessions > R version box`. Also in the Build pane just choosing `More > Clean & Rebuild` can fix the problem. We hope that these amended tau functions will be integrated into `IDSpatialStats` package, via pull requests by us over the course of the next few months.  and then building the functions necessary in RStudio before use **
+Correct knitting of this document requires cloning its GitHub repository into an RStudio 
+project (RStudio cmds: `File > New Project > Version Control > Git > repository URL =
+https://github.com/t-pollington/developments_tau_statistic`). Furthermore to use the [tau functions](#taufunctions) the `tauodds` (internal) package from within this repository needs to be built and installed before use (RStudio cmds: `Build > Configure Build Tools` and setting package directory to `.../measles/tauodds` and then in the top-right Build pane choose `Install and Restart`); this is why we require `devtools` package. Sometimes if an error appears when building in RStudio's Build pane then you will need to check your RStudio is running the 64-bit R in `Tools > Global Options > General> Basic tab > R Sessions > R version box`. Also in the Build pane just choosing `More > Clean & Rebuild` can fix the problem. We hope that these amended tau functions will be integrated into `IDSpatialStats` package, via pull requests by us over the course of the next few months.  
 
-If you haven't compiled LaTeX before on your Windows OS then downloading the `tinytex` package and running `tinytex::install_tinytex()` can help. Also Replace & Find inside this document (in RStudio : `Ctrl+Shift+J`) the file paths `/home/tim/measles/figs` & `/home/tim/measles/intrmd8` that may require amending (these are for a Linux OS) according to the system filepath that your cloned repository is in.
+If you haven't compiled LaTeX before on your Windows OS then downloading the `tinytex` package and running `tinytex::install_tinytex()` can help. Also amend the `setup` chunk according to your filepaths for the repository, note these are often different across OS. 
 
-```{r setup, include=FALSE}
+```{r setup, include=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
+figspath = "/home/tim/measles/figs"
+intrmd8path = "/home/tim/measles/intrmd8"
 ```
 
 # Introduction
@@ -102,7 +100,7 @@ axis(1, at=c(0,23,47,60,87), labels=c(0,23,47,60,87), col.axis="black", las=1)
 The epidemic lasts nearly 3 months which could have covered up to ~6 disease generations based on estimated serial intervals for this specific epidemic[@Cori2013]. Five generations can be discerned from the epidemic curve of this propagated epidemic. 
 
 ```{r plothist, eval=F}
-setwd("/home/tim/measles/figs")
+setwd(figspath)
 pdf("Re.pdf")
 hist(X$tPRO, xlab="Study time (days)", ylab="Measles cases", cex.lab = 1.5, main=NULL, 
 breaks = seq.int(tPRO.range[1],tPRO.range[2],by = 1), xaxs="i", yaxs="i", xaxt = "n", 
@@ -123,7 +121,7 @@ df = data.frame(x = X$x.loc, y = X$y.loc, t = X$tPRO)
 rbPal = colorRampPalette(colors = c("red","orange","yellow","green","blue","purple","violet")) # plot rainbow colours
 df$col = rbPal(10)[as.numeric(cut(df$t, breaks = 10))] # coloured deciles
 
-setwd("/home/tim/measles/figs")
+setwd(figspath)
 pdf("STplot.pdf")
 # jitter in x & y separately, using Uniform[-2,+2] distribution .
 plot(jitter(X$x.loc,amount = 5), jitter(X$y.loc,amount = 5), col = df$col, main = NULL, 
@@ -337,11 +335,11 @@ tauCItmp = summonTauBstrap(as.matrix(hag.dat), r.min, r.max, bootiters = 100, T1
 T2 = 14)
 tauCI = summonTauCI(tauCItmp, r.max)
 proc.time() - ptm # 1·148s
-setwd("/home/tim/measles/intrmd8")
+setwd(intrmd8path)
 save(tau.hagg, file = "tau.hagg.RData")
 
 # plot our reproduction of Lessler's analysis----
-setwd("/home/tim/measles/figs")
+setwd(figspath)
 pdf("taureproduction.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
 plot(r.mid, tau.hagg, ylim=c(0.6,max(tau.ci[2,])+0.5), type="l", log="y", xlim=c(0,100), 
 yaxt="n", axes=F, xaxs="i", yaxs="i", col = "black", 
@@ -394,7 +392,7 @@ hag.permute = IDSpatialStats::get.tau.permute(posmat = as.matrix(hag.dat),
 fun = hagg.func, r = r.max, r.low = r.min, permutations = 2500, 
 comparison.type = "independent")
 proc.time() - ptm # 875·221s ~ 15mins
-setwd("/home/tim/measles/intrmd8")
+setwd(intrmd8path)
 save(hag.permute, file = "hag.permute.RData")
 
 # create curve set for null hypothesis for GET----
@@ -406,7 +404,7 @@ central = "median")
 round(attr(res.cr,"p_interval"), digits = 3) # p-value range
 
 # GET plot----
-setwd("/home/tim/measles/figs")
+setwd(figspath)
 pdf("get.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
 plot(NULL, xlim = c(0,100), ylim = c(min(res.cr$lo),max(res.cr$obs)), xaxt = "n", 
 yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", 
@@ -476,7 +474,7 @@ ptm = proc.time()
 tauCItmp2500noinfs = summonTauBstrapnoinfs(as.matrix(hag.dat), r.min, r.max, 
 bootiters = 2500, T1 = 0, T2 = 14)
 proc.time() - ptm # 21·955s
-setwd("/home/tim/measles/intrmd8")
+setwd(intrmd8path)
 save(tauCItmp2500noinfs, file = "tauCItmp2500noinfs.RData")
 set.seed(seed = 6)
 tauCItmp100noinfs = summonTauBstrapnoinfs(as.matrix(hag.dat), r.min, r.max, 
@@ -519,7 +517,7 @@ ciIntercept <- function(n.sim, mid.set, tau.sim) {
 Note that some chunks have had `warning=FALSE` set, to silence messages about "pch value '255' is invalid in this locale". Running code appears to plot the graphs as intended.
 ```{r compute d.envelope, eval=F, warning=FALSE}
 # compute d.envelope by number of bootstrap estimates (100 or 2500)----
-setwd("/home/tim/measles/intrmd8")
+setwd(intrmd8path)
 load(file = "tau.hagg.RData")
 load(file = "tauCItmp2500noinfs.RData")
 load(file = "tauCItmp100noinfs.RData")
@@ -546,7 +544,7 @@ dintercept.pointestimate = ((1-tau.hagg[firstbelow1-1])*
 dintercept.pointestimate
 save(dintercept.pointestimate, file = "dintercept.pointestimate.RData")
 
-setwd("/home/tim/measles/figs")
+setwd(figspath)
 pdf("nbstrap.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
 plot(NULL, xlim = c(0,100), log="y", ylim = c(min(tauCItmp2500noinfs),
 max(tauCItmp2500noinfs)), xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", 
@@ -589,11 +587,11 @@ dev.off()
 Bizarrely the number of bootstrap estimates of 100 versus 2500 don't appear to impact the precision of `d.envelope`; both CIs used 100% of simulations. We conjecture that as 100 is similar to the number of cases (188), it can adequately represent the data.
 
 ```{r d envelope distribution, eval = F}
-setwd("/home/tim/measles/intrmd8")
+setwd(intrmd8path)
 load("d.envelope100.RData")
 load("d.envelope2500.RData")
 load("dintercept.pointestimate.RData")
-setwd("/home/tim/measles/figs")
+setwd(figspath)
 pdf("bootstraphist.pdf")
 par(mfrow = c(1,2))
 hist(d.envelope100, breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", main = "N=100", 
@@ -619,7 +617,7 @@ A better alternative is the *BCa confidence interval* using `coxed::bca()` which
 
 ### Number of bootstrap estimates & bootstrap sampling method
 ```{r CI construction, eval=F, warning=FALSE}
-setwd("/home/tim/measles/intrmd8")
+setwd(intrmd8path)
 load("d.envelope2500.RData")
 load("d.envelope100.RData")
 load("dintercept.pointestimate.RData")
@@ -637,7 +635,7 @@ tauCI2500lohv2 = summonTauBstraplohv2(X.region = as.matrix(hag.dat), r.min = r.m
 r.max = r.max, bootiters = 2500, T1 = 0, T2 = 14)
 proc.time() - ptm # 16·542s
 d.envelope2500lohv2 = ciIntercept(2500, mid.set = r.mid, tau.sim = tauCI2500lohv2)
-setwd("/home/tim/measles/intrmd8")
+setwd(intrmd8path)
 save(d.envelope2500lohv2, file = "d.envelope2500lohv2.RData")
 set.seed(seed = 6) # set at seed = 6 to compare with tauCItmp100noinfs
 tauCI100lohv2 = summonTauBstraplohv2(X.region = as.matrix(hag.dat), r.min = r.min, 
@@ -655,7 +653,7 @@ percentile.ci.2500
 BCa.ci.lohv2.2500
 percentile.ci.lohv2.2500
 
-setwd("/home/tim/measles/figs")
+setwd(figspath)
 pdf("bootstraphistv2.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
 par(mfrow = c(2,2))
 hist(d.envelope100,breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", ylab = "Frequency", 
@@ -788,7 +786,7 @@ Lessler et al use the resampled-index as the standard bootstrap sampling method 
 ### Modified marked point bootstrap vs Loh & Stein
 This chunk explains why MMPB is better than the standard Loh & Stein's implementation for the tau statistic.
 ```{r spatialbstrap, eval=F, warning=FALSE}
-setwd("/home/tim/measles/intrmd8")
+setwd(intrmd8path)
 load("tau.hagg.RData")
 load("d.envelope2500lohv2.RData")
 load("dintercept.pointestimate.RData")
@@ -802,13 +800,13 @@ ptm = proc.time()
 tausims.loh2 = summonTauBstraplohv2(as.matrix(hag.dat), r.min, r.max, 2500, T1= 0, 
 T2 = 14)
 proc.time() - ptm # 15·429s
-setwd("/home/tim/measles/intrmd8")
+setwd(intrmd8path)
 save(tausims.loh2, file = "tausims.loh2.RData")
 tauCI.loh2 = summonTauCI(tausims.loh2, r.max)
 d.envelope2500lohv1 = ciIntercept(2500, mid.set = r.mid, tau.sim = tausims.loh1) 
 # warning only 77·3% of sims cross tau = 1
 
-setwd("/home/tim/measles/figs")
+setwd(figspath)
 pdf("loh.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
 plot(NULL, xlim = c(0,100), log="y", ylim = c(0.5,max(tausims.loh1,tausims.loh2)), 
 xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", 
@@ -857,7 +855,7 @@ The CIs for Loh & Stein are unreliable as they are only formed from only 77.4% o
 ## Distance bands
 We do a simple analysis of the case distance distribution to propose a reasonable distance band set. We then compare this to the one used by Lessler et al in their measles analysis to see how much the estimates change.
 ```{r distance bands, eval=F, warning=F}
-setwd("/home/tim/measles/intrmd8")
+setwd(intrmd8path)
 load(file = "d.envelope2500lohv2.RData")
 load("tausims.loh2.RData")
 load("tau.hagg.RData")
@@ -913,7 +911,7 @@ hist(d.envelope2500lohv2.newdb) # any CI struggles to contain the point estimate
 # the strongly bimodal distribution of D for the non-overlapping distance bands.
 hist(d.envelope2500lohv2)
 
-setwd("/home/tim/measles/figs")
+setwd(figspath)
 pdf("distband.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
 plot(NULL, xlim = c(0,100), log="y", ylim = c(0.3, (max(tausims.loh2[,1], 
 tau.sims.newdb[,1])+4)), xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", 
