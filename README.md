@@ -1,7 +1,7 @@
 # Code analysis
 The code analysis for [*Developments in statistical inference when assessing spatiotemporal disease clustering with the tau statistic*](https://doi.org/10.1016/j.spasta.2020.100438) is available to run in [R Markdown (including instructions)](code_analysis.Rmd) or read in [PDF format](code_analysis.pdf). 
 
-# Citation information
+# Citing this resource
 As these analysis notes are an integral part of the paper and do not have their own DOI, we kindly request that you cite the full paper as follows:
 
 > @ARTICLE{Pollington2020,

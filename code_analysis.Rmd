@@ -1,5 +1,5 @@
 ---
-title: "Analysis code"
+title: "Analysis code for *Developments in statistical inference when assessing spatiotemporal disease clustering with the tau statistic*"
 author: "written by Timothy M Pollington and reviewed by Lloyd AC Chapman"
 date: "April 2020"
 output: 
@@ -7,21 +7,43 @@ output:
     number_sections: true
     toc: true
     toc_depth: 3
+urlcolor: blue
 bibliography: rmarkdown.bib
 ---
 <!-- All text within chunks should be line breaked to avoid >90 characters per line. This is an example of a line which doesn't do that! but it's outside of a chunk so you can still see it. You can set the display of the vertical line in the Editor pane to assist you in RStudio > Tools > Global Options > Code > Display > Margin column = 90 -->
 ***
 
+# Citing this resource
+Please kindly cite as:
+
+> @ARTICLE{Pollington2020,
+ author={Pollington, T.M. and Tildesley, M.J. and Hollingsworth, T.D. and Chapman, L.A.C.},  
+ year={2020},  
+ title={{Developments in statistical inference when assessing spatiotemporal disease clustering with the tau statistic}},  
+ journal={Spatial Statistics},  
+ doi={10.1016/j.spasta.2020.100438},  
+}
+
+[![CC BY 4.0][cc-by-shield]][cc-by]  
+
+This work is licensed under a [Creative Commons Attribution 4.0 International License][cc-by].  
+
+[cc-by]: http://creativecommons.org/licenses/by/4.0/  
+[cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
+
 # Prerequisites before your first knit of this document
 
-You may also need to install the following R packages and be running RStudio `as administrator` to install them (this is useful anyway for modifying the file structure of your cloned repository). 
+You will need to install the following R packages and be running *RStudio* `as administrator`; this is useful anyway for modifying the file structure of your cloned repository from within *RStudio*. 
 ```{r prerequisites}
 # install.packages(pkgs = c("IDSpatialStats","surveillance","latex2exp",
 # "scales","GET","devtools","coxed"))
 # You'll need to copy and paste them uncommented into your R console to run.
 ```
 
-If you haven't compiled LaTeX before on your Windows OS then downloading the `tinytex` package and running `tinytex::install_tinytex()` can help. Also Replace & Find in RStudio (`Ctrl+Shift+J`) the file paths `/home/tim/measles/figs` & `/home/tim/measles/intrmd8` that may require amending (these are for a Linux OS) according to the system filepath that your cloned repository is in.
+Correct knitting of this document requires cloning this GitHub repository into an RStudio project (RStudio cmds: `File > New Project > Version Control > Git > repository URL =
+https://github.com/t-pollington/developments_tau_statistic`). Furthermore to use the [tau functions](#taufunctions) the `tauodds` (internal) package from within this repo needs to be built and installed before use (RStudio cmds: `Build > Configure Build Tools` and setting package directory to `yourchoice/measles/tauodds` and then in the top-right Build pane choose `Install and Restart`); this is why we require `devtools` package. Sometimes if an error appears when building in RStudio's Build pane then you will need to check your RStudio is running the 64-bit R in `Tools > Global Options > General> Basic tab > R Sessions > R version box`. Also in the Build pane just choosing `More > Clean & Rebuild` can fix the problem. We hope that these amended tau functions will be integrated into `IDSpatialStats` package, via pull requests by us over the course of the next few months.  and then building the functions necessary in RStudio before use **
+
+If you haven't compiled LaTeX before on your Windows OS then downloading the `tinytex` package and running `tinytex::install_tinytex()` can help. Also Replace & Find inside this document (in RStudio : `Ctrl+Shift+J`) the file paths `/home/tim/measles/figs` & `/home/tim/measles/intrmd8` that may require amending (these are for a Linux OS) according to the system filepath that your cloned repository is in.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -50,7 +72,7 @@ data("hagelloch", package = "surveillance")
 library(surveillance)
 ```
 ```{r data check}
-help("hagelloch") # load dataset info in RStudio's Help pane
+help("hagelloch") # load dataset info in RStudio's Help pane or in browser if knitted
 rm(hagelloch) # additional time series object that loads is not required
 # X = {house no, patient no, x/y-location, prodromal start}
 X = subset(hagelloch.df, select = c("HN","PN","x.loc","y.loc","tPRO"))
@@ -278,7 +300,7 @@ tauodds::getTau2Loh(toy[,"x"], toy[,"y"], toy[,"t"], toy.r.min, toy.r.max,
 as.integer(inds), 0, 4) # matches paper calculation
 ```
 
-## Loading Lessler measles setup to validate tau functions
+## Loading Lessler et al's measles setup to validate tau functions
 ```{r loading lessler measles setup}
 # the following code is abridged from that kindly provided by Lessler et al of their
 # measles analysis----
@@ -336,7 +358,7 @@ lines(r.mid, tau.ci[,2], lty = 3, col = "slategrey", lwd = 4)
 abline(v = 14.5, col = "red", lwd = 4)
 legend(x = 30, y = 8, legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate'), 
 "95% pointwise envelope (our function)",
-latex2exp::TeX('95% pointwise envelope ($\\textit{IDSpatialStats}$)'),"End of clustering (defined by Lessler et al.)"),
+latex2exp::TeX('95% pointwise envelope ($\\textit{IDSpatialStats}$)'),"End of clustering (defined by Lessler et al)"),
 col=c("black", "green", "slategrey","red"), lty=c(1,2,3,1), cex=1.05, yjust = 0.5, lwd = 6)
 dev.off()
 
@@ -361,7 +383,7 @@ We are confident that `seed = 2` produces a result identical to the original gra
 
 # Hypothesis testing
 
-## Global Envelope Tests
+## Global envelope tests
 We construct a *global envelope* around the null hypothesis $H_0=\text{no spatial clustering}$ represented by $\tau=1$ (simulated by time mark permutations of the dataset). We assess if a region exists where the tau point estimate is above the upper bound (or below the lower bound as a two-tailed test) of this null envelope, using 2,500 iterations. A two-sided test is necessary as until you plot the graph you don't know whether there is clustering, inhibition or both. 
 ```{r GET, eval = F}
 # generate 'time mark'-permuted dataset. We have not produced a replacement function in
@@ -443,7 +465,7 @@ dev.off()
 ```
 ![Global Envelope Test](./figs/get.pdf){width=100%}
 
-# Parameter estimation of $\hat{D}$---the distance range of spatiotemporal clustering
+# Parameter estimation of $\hat{D}$---the endpoint of spatiotemporal clustering
 The `ciIntercept()` function identifies the values of d where $\tau(\hat{d}) = 1$ for the `d.envelope`.
 
 ## Number of bootstrap estimates
