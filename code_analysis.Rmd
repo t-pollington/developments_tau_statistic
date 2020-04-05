@@ -45,7 +45,7 @@ We also do data checks and tests to show the code runs as expected. All code was
 You will need to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/), the following R packages and be running *RStudio* `as administrator`; this is useful too in modifying the file structure of your cloned repository from within *RStudio*. 
 ```{r prerequisites}
 # install.packages(pkgs = c("IDSpatialStats","surveillance","latex2exp",
-# "scales","GET","devtools","coxed"))
+# "scales","GET","devtools","coxed","testthat"))
 # You'll need to copy and paste them (uncommented) into your R console to run.
 ```
 
@@ -200,7 +200,7 @@ fig_label <- function(text, region="figure", pos="topleft", cex=NULL, ...) {
 Third-party code assists us with figure labelling[@January2017].
 
 # Tau functions {#taufunctions}
-The actual tau functions as coded in the C language and saved as a .cpp file can be found in the `./tauodds/src/*.cpp` based on adaptations from the original `IDSpatialStats` code[@LesslerGiles].
+The actual tau functions as coded in the C language can be found in `./tauodds/src/*.cpp` based on adaptations from an older fork (v0.3.7) of the `IDSpatialStats` package [@LesslerGiles].
 
 ## Defining tau functions
 ```{r some-tau-functions}
@@ -210,7 +210,8 @@ summonTau = function(X.region, r.min, r.max, T1, T2){
   r.min, r.max, as.integer(1:nrow(X.region)), T1, T2)
   return(tau)
 }
-# faster version of IDSpatialStats::get.tau.bootstrap()----
+# faster version of IDSpatialStats::get.tau.bootstrap() using resampled-index spatial----
+# bootstrap
 summonTauBstrap = function(X.region, r.min, r.max, bootiters, T1, T2){
   tauboots = matrix(NA, nrow = bootiters, ncol = length(r.max))
   for (i in 1:bootiters) {
@@ -220,9 +221,8 @@ summonTauBstrap = function(X.region, r.min, r.max, bootiters, T1, T2){
   }
   return(tauboots)
 }
-# faster version of IDSpatialStats::get.tau.bootstrap() which ignores and repeats----
-# bootstrapped estimate if any Inf values are computed. Necessary for 
-# GET::global_envelope_test
+# faster version of IDSpatialStats::get.tau.bootstrap() using resampled-index spatial----
+# bootstrap which also ignores and repeats bootstrapped estimate if any Infs are computed. 
 summonTauBstrapnoinfs = function(X.region, r.min, r.max, bootiters, T1, T2){
   tauboots = matrix(NA, nrow = bootiters, ncol = length(r.max))
   i = 1
@@ -269,32 +269,47 @@ summonTauCI <- function(tauboots,r.max){
 ```
 
 ## Toy problem to validate them
-We use a toy system of 5 cases to test `IDSpatialStats::get.tau.bootstrap()` against these Tau functions defined above. All came out fine versus non-computer calculations.
+We use a toy system of 5 cases to test `IDSpatialStats::get.tau.bootstrap()` against the [tau functions](#taufunctions). `testthat` package [@testthat] will throw an error if these 
+functions do not produce the expected output, otherwise they will complete silently.
 
 ```{r testing_with_toy_model}
 # specify the toy system----
+library(testthat)
 toy = matrix(c(0,0,1,0,1,2,1,0,5,1,1,14,1,2,9), nrow = 5, ncol = 3, 
 dimnames = list(NULL,c("x","y","t")), byrow = T)
 toy.r.max = c(1.1,2) # two distance bands
 toy.r.min = c(0,1.1)
-hagg.func <- function(a, b, tlimit=4){ # with a time-relatedness interval of 
-  # [T_1 = 0, T_2 = 4]
+hagg.func <- function(a, b, tlimit=4){ 
+  # with a time-relatedness interval of [T_1 = 0, T_2 = 4]
   if(abs(a[3]-b[3]) <= tlimit){rc=1}
   else{rc=2}
   return(rc)
 }
 
 # run Lessler's and our function on this----
+test_that("comparing Lessler RISB, RISB, MPSB and MMPSB, against non-computer calcs",{
 set.seed(seed = 1)
-IDSpatialStats::get.tau.bootstrap(toy, hagg.func, r = toy.r.max, r.low = toy.r.min, 
-boot.iter = 1, comparison.type = "independent") # the inds that get.tau.bootstrap() used 
-# were read from additional print statements added to their code and input into ours.
+lessler.RISB = IDSpatialStats::get.tau.bootstrap(toy, hagg.func, r = toy.r.max, 
+  r.low = toy.r.min, boot.iter = 1, comparison.type = "independent") # the inds that
+  # get.tau.bootstrap() used were read from additional print statements added to their 
+  # code and input into ours.
+expect_equal(object = lessler.RISB[,3], expected = c(3.5,0.0)) #PASS
+
 inds = c(1,4,1,2,5) # this is the inds that is used for get.tau.bootstrap as printed off 
-# when it had an extra printf statement in the get.tau.bootstrap program
-tauodds::getTau2OddsMeasles(toy[,"x"], toy[,"y"], toy[,"t"], toy.r.min, toy.r.max, 
-as.integer(inds), 0, 4) # matches paper calculation
-tauodds::getTau2Loh(toy[,"x"], toy[,"y"], toy[,"t"], toy.r.min, toy.r.max, 
-as.integer(inds), 0, 4) # matches paper calculation
+  # when it had an extra printf statement in the get.tau.bootstrap program
+pollington.RISB = tauodds::getTau2OddsMeasles(toy[,"x"], toy[,"y"], toy[,"t"], toy.r.min, 
+  toy.r.max, as.integer(inds), 0, 4)
+expect_equal(object = pollington.RISB, expected = c(3.5,0.0), tolerance = 1e-06) #PASS
+
+pollington.MPSB = tauodds::getTau2Loh(toy[,"x"], toy[,"y"], toy[,"t"], toy.r.min, 
+  toy.r.max, as.integer(inds), 0, 4) 
+expect_equal(object = pollington.MPSB, expected = c(0.5,0.25))
+
+pollington.MMPSB = tauodds::getTau2Lohv2(toy[,"x"], toy[,"y"], toy[,"t"], toy.r.min, 
+  toy.r.max, as.integer(inds), 0, 4)
+expect_equal(object = pollington.MMPSB, expected = c(13/7,13/35), 
+             tolerance = 1e-03)
+})
 ```
 
 ## Loading Lessler et al's measles setup to validate tau functions
