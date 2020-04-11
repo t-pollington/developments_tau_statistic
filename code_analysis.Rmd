@@ -499,11 +499,12 @@ dev.off()
 ![Global Envelope Test](./figs/get.pdf){width=100%}
 
 # Parameter estimation of $\hat{D}$---the endpoint of spatiotemporal clustering
-Our `ciIntercept()` function identifies the first value of d where $\hat{\tau}(d) = 1$ for the `d.envelope`.
+Our `ciIntercept()` function identifies the first value of d where $\hat{\tau}(d) = 1$
+for all $\underline{D}$ to generate `d.envelope`.
 
 ```{r ciintercept}
 # ciIntercept() function----
-ciIntercept <- function(n.sim, end.set, tau.sim) {
+ciIntercept <- function(n.sim, end.set, tau.sim, verbose = 1) {
   j.max = length(end.set)
   # now define d.envelope
   alwaysabove1 = 0
@@ -517,7 +518,7 @@ ciIntercept <- function(n.sim, end.set, tau.sim) {
         if(tau.sim[i,j] <= 1){ # else it stays above tau = 1 until the next j is tested
           stillabove1 = FALSE
           root.tau1 = ((1-tau.sim[i,(j-1)])*(end.set[j]-end.set[j-1])/
-                         (tau.sim[i,j]-tau.sim[i,(j-1)]))+end.set[j-1]
+                       (tau.sim[i,j]-tau.sim[i,(j-1)]))+end.set[j-1]
           d.envelope = c(d.envelope, root.tau1)
         }
       }
@@ -528,8 +529,10 @@ ciIntercept <- function(n.sim, end.set, tau.sim) {
   }
   # print warnings as if the value is much below 100% then a CI can't be constructed as
   # it has not been drawn from a random sample.
+  if(verbose == 1){
   print(paste0("sims cross tau = 1 from above = ",length(d.envelope)/n.sim*100,"%"))
   print(paste0("alwaysabove1 = ",alwaysabove1/n.sim*100,"%"))
+  }
   return(d.envelope)
 }
 ```
@@ -557,8 +560,8 @@ setwd(intrmd8path)
 load(file = "tau.hagg.RData")
 load(file = "tauCItmp2500noinfs.RData")
 load(file = "tauCItmp100noinfs.RData")
-d.envelope2500 = ciIntercept(2500, mid.set = r.mid, tau.sim = tauCItmp2500noinfs)
-d.envelope100 = ciIntercept(100, mid.set = r.mid, tau.sim = tauCItmp100noinfs)
+d.envelope2500 = ciIntercept(2500, end.set = r.max, tau.sim = tauCItmp2500noinfs)
+d.envelope100 = ciIntercept(100, end.set = r.max, tau.sim = tauCItmp100noinfs)
 quantile(d.envelope2500, probs = c(0.025,0.975))
 quantile(d.envelope100, probs = c(0.025,0.975))
 save(d.envelope2500, file = "d.envelope2500.RData")
