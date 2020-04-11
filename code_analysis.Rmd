@@ -50,15 +50,13 @@ You will need to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/
 ```
 
 Correct knitting of this document requires cloning its GitHub repository into an *RStudio* 
-project (*RStudio* cmds: `File > New Project > Version Control > Git > repository URL = `
-`https://github.com/t-pollington/developments_tau_statistic`). Furthermore to use the [tau functions](#taufunctions) the `tauodds` (internal) package from within this repository needs to be built and installed before use (*RStudio* cmds: `Build > Configure Build Tools` and setting package directory to `.../measles/tauodds` and then in the top-right Build pane choose `Install and Restart`); this is why we require `devtools` package. Sometimes if an error appears when building in *RStudio*'s Build pane then you will need to check *RStudio* is running the 64-bit R in `Tools > Global Options > General> Basic tab > R Sessions > R version box`. Also in the Build pane just choosing `More > Clean & Rebuild` can fix the problem. We hope that these amended tau functions will be integrated into `IDSpatialStats` package, via pull requests by us over the course of the next few months.  
+project (*RStudio* cmds: `File > New Project > Version Control > Git > repository URL =`  
+`https://github.com/t-pollington/developments_tau_statistic`). Furthermore to use the [tau functions](#taufunctions) the `tauodds` (internal) package from within this repository needs to be built and installed before use (*RStudio* cmds: `Build > Configure Build Tools` and setting package directory to `.../measles/tauodds` and then in the top-right Build pane choose `Install and Restart`); this is why we require `devtools` package. Sometimes if an error appears when building in *RStudio*'s Build pane then you will need to check *RStudio* is running the 64-bit R in `Tools > Global Options > General> Basic tab > R Sessions > R `version box`. Also in the Build pane just choosing `More > Clean & Rebuild` can fix the problem. We hope that these amended tau functions will be integrated into `IDSpatialStats` package, via pull requests by us over the course of the next few months.  
 
 If you haven't compiled LaTeX before on your Windows OS then downloading the `tinytex` package and running `tinytex::install_tinytex()` can help. Also amend the `setup` chunk according to your filepaths for the repository, note these are often different across OS. 
 
 ```{r setup, include=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
-figspath = "C:/Users/mochu/Documents/GitHub/developments_tau_statistic/figs"
-intrmd8path = "C:/Users/mochu/Documents/GitHub/developments_tau_statistic/intrmd8"
 ```
 
 # Descriptive analyses on the Hagelloch measles dataset
@@ -67,6 +65,8 @@ intrmd8path = "C:/Users/mochu/Documents/GitHub/developments_tau_statistic/intrmd
 We use the open access Hagelloch dataset from the `surveillance` R package[@Meyer2017]. Like Lessler et al's shared code (unpublished) we take the start of the prodromal period (`tPRO`) as the start of onset. There are 188 cases, one data row per case. In a reduced version of the dataset (`X`), all five variables have reasonable ranges and data types as shown below. 
 ```{r load data, message=FALSE}
 rm(list = ls()) # clear the R workspace
+figspath = "C:/Users/mochu/Documents/GitHub/developments_tau_statistic/figs"
+intrmd8path = "C:/Users/mochu/Documents/GitHub/developments_tau_statistic/intrmd8"
 data("hagelloch", package = "surveillance") 
 library(surveillance)
 ```
@@ -136,6 +136,7 @@ legend(x = 5,y = 235, title = "Onset time decile (days)", legend = legend.text,
 col  = rbPal(10), pch = 20, cex = 0.9, pt.cex = 2, ncol = 2)
 dev.off()
 ```
+
 ![Spatial plot of cases' locations (jittered) with colour marks for onset date](./figs/STplot.pdf){width=100%}
 
 The study window was a ~280 m x 240 m rectangle. Households have single or multiple cases. The jittered plot shows that household cases often have very similar onsets because they share the same colour. Nearby houses also tend to share similar onsets to their neighbours but there are exceptions; the range in which the onsets are similar is likely of the order of tens of metres. 
@@ -268,7 +269,20 @@ summonTauCI <- function(tauboots,r.max){
 }
 ```
 
-## Toy problem to validate them
+## Comparing IDSpatialStats::get.tau() & tauodds::getTau2OddsMeasles()
+```{r compare point estimator functions}
+setwd(intrmd8path)
+load(file = "tau.hagg.RData")
+dist.gap = 50
+r.max = seq(10,124,2)
+r.min = r.max-dist.gap
+r.min[which(r.min < 0)] = 0
+tau.hagg1 = tauodds::getTau2OddsMeasles(X$x.loc, X$y.loc, X$tPRO, r.min, r.max, index = as.integer(1:nrow(X)), importT1 = 0,importT2 = 14)
+expect_equal(tau.hagg, tau.hagg1, tolerance=1e-07) # equal up to 1e-07 but results are 
+# different at 1e-08.
+```
+
+## Toy problem to validate the bootstrap methods
 We use a toy system of 5 cases to test `IDSpatialStats::get.tau.bootstrap()` against the [tau functions](#taufunctions). `testthat` package [@testthat] will throw an error if these 
 functions do not produce the expected output, otherwise they will complete silently.
 
@@ -393,19 +407,18 @@ lines(r.max, tauCI[1,], col = "slategrey", lwd = 8)
 lines(r.max, tauCI[2,], col = "slategrey", lwd = 8)
 dev.off()
 ```
-![Reproducing Lessler et al's Fig4C using our own tau functions](./figs/taureproduction.pdf){width=100%}
 
-`summonTauBstrap()` is faster than `IDSpatialStats` equivalent (1s vs. 39s). It still outputs a similar version to Lessler's albeit a difference due to different ways of dividing up and ordering the call of `sample(..., seed = )` resulting in different seeds being used. 
+![Reproducing Lessler et al.'s Fig4C using our own tau functions](./figs/taureproduction.pdf){width=100%}
 
-We are confident that `seed = 2` produces a result identical to the original graph in [@Lessler2016 Fig 4C p10/13] as the lower bound touches 14·5m which matches the "up to 15m" result in Lessler and the CIs coincide perfectly. In fact due to the convention of plotting a distance band's midpoint this refers to clustering "up to 30m"; also the exact matchup of the confidence intervals shows that the faster code emulates the original.
+We are confident that `seed = 2` produces a result identical to the original graph in [@Lessler2016 Fig 4C p10/13] as the lower bound touches 14·5m which matches the "up to 15m" result in Lessler et al. and the CIs coincide perfectly. In fact due to the convention of plotting a distance band's midpoint this refers to clustering "up to 30m"; also the exact matchup of the confidence intervals shows that the faster code (`summonTauBstrap()` 1s, `IDSpatialStats` 39s) emulates the original.
 
 # Hypothesis testing
 
 ## Global envelope tests
-We construct a *global envelope* around the null hypothesis $H_0=\text{no spatial clustering}$ represented by $\tau=1$ (simulated by time mark permutations of the dataset). We assess if a region exists where the tau point estimate is above the upper bound (or below the lower bound as a two-tailed test) of this null envelope, using 2,500 iterations. A two-sided test is necessary as until you plot the graph you don't know whether there is clustering, inhibition or both. 
+We construct a *global envelope* around the null hypothesis $H_0=\text{no spatial clustering nor inhibition}$ represented by $\tau=1$ (simulated by time-mark permutations of the dataset). We assess if a region exists where the tau point estimate is above the upper bound or below the lower bound (as a two-tailed test) of this null envelope, using 2,500 iterations. A two-sided test is necessary as until you plot the graph you don't know whether there is clustering, inhibition or both. 
 ```{r GET, eval = FALSE}
-# generate 'time mark'-permuted dataset. We have not produced a replacement function in
-# this case----
+# generate 'time mark' permuted dataset----
+# We continued to use IDSpatialStats::get.tau.permute() for this purpose
 set.seed(seed = 4)
 ptm = proc.time()
 hag.permute = IDSpatialStats::get.tau.permute(posmat = as.matrix(hag.dat), 
@@ -417,7 +430,8 @@ save(hag.permute, file = "hag.permute.RData")
 
 # create curve set for null hypothesis for GET----
 load(file = "tau.hagg.RData")
-curveset = GET::create_curve_set(list(r = r.max, obs = tau.hagg, sim_m = t(hag.permute)))
+curveset = GET::create_curve_set(list(r = r.max, obs = tau.hagg, 
+                                      sim_m = as.matrix(hag.permute)[,c(-1,-2)]))
 res.cr = GET::global_envelope_test(curve_sets = curveset, type = "rank", alpha = 0.05,
 alternative = c("two.sided"), ties = "erl", probs = c(0.025, 0.975), quantile.type = 7, 
 central = "median")
@@ -426,13 +440,12 @@ round(attr(res.cr,"p_interval"), digits = 3) # p-value range
 # GET plot----
 setwd(figspath)
 pdf("get.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
-plot(NULL, xlim = c(0,100), ylim = c(min(res.cr$lo),max(res.cr$obs)), xaxt = "n", 
-yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", 
-xlab = "", lwd = 4,
-cex.lab = 1.5)
+plot(NULL, xlim = c(0,120), ylim = c(min(res.cr$lo, res.cr$obs),max(res.cr$obs)), 
+     xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", xlab = "", lwd = 4,
+     cex.lab = 1.5)
 mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
 mtext(latex2exp::TeX(
-'Distance band endpoint ($d_m$) at 2m increments,'), side=1, line=3, cex = 1.5)
+'Distance band endpoint ($d_m$)'), side=1, line=3, cex = 1.5)
 mtext(latex2exp::TeX(
 'from an average case (m)'), side=1, line=4, cex = 1.5)
 for (i in 1:2500) {
@@ -446,7 +459,7 @@ lines(res.cr$r, res.cr$obs, lwd = 4)
 axis(1, lwd = 4)
 abline(h=1, lty = 2, lwd = 4)
 legend(x = 55, y = 3.4, legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate'), 
-"95% global envelope",latex2exp::TeX('simulations of $H_0$'), "    median simulation",
+"95% global envelope",latex2exp::TeX('simulations of $H_0$'), "median simulation",
 latex2exp::TeX('$\\tau = 1$')), col=c("black", "slategrey", "grey", "red", "black"),
 lty=c(1,1,1,1,2), cex=1.05, yjust = 0.5, lwd = 6)
 par(xpd = TRUE)
@@ -455,17 +468,17 @@ dev.off()
 
 # graphical abstract version----
 r.max1 = r.max[1:46]
-res.cr1 = res.cr[1:46]
-hag.permute1 = hag.permute[,1:46]
+res.cr1 = res.cr[1:46,]
+hag.permute1 = hag.permute[1:46,c(-1,-2)]
 
 pdf("get.ga.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
-plot(NULL, xlim = c(10,100), ylim = c(min(res.cr1$lo),max(res.cr1$obs)), xaxt = "n", 
+plot(NULL, xlim = c(10,100), ylim = c(min(res.cr1$lo,res.cr1$obs),max(res.cr1$obs)), xaxt = "n", 
 yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", 
 xlab = latex2exp::TeX(
 '$d$'), lwd = 8, cex.lab = 2)
 mtext(latex2exp::TeX('$\\tau$'), side = 2, cex = 2, las = 1, line = 2, lwd = 4)
 for (i in 1:2500) {
-  lines(r.max1, hag.permute1[i,], col = scales::alpha("grey", alpha = 0.3), lwd = 8)
+  lines(r.max1, hag.permute1[,i], col = scales::alpha("grey", alpha = 0.3), lwd = 8)
 }
 axis(2, las=1, at=c(0.7,1,4), labels = c("0·7","1","4·0"), cex = 2, lwd = 4)
 axis(1, las=1, at=c(10, 50, 100), labels = c("10","50","100"), cex = 2, lwd = 4)
@@ -481,6 +494,7 @@ mtext(side = 3, text = latex2exp::TeX('p-value$\\in\\lbrack$ 0,0·014 $\\rbrack$
 outer = 0, cex = 2, lwd = 4)
 dev.off()
 ```
+
 ![Global Envelope Test](./figs/get.pdf){width=100%}
 
 # Parameter estimation of $\hat{D}$---the endpoint of spatiotemporal clustering
