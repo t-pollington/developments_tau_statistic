@@ -271,6 +271,7 @@ summonTauCI <- function(tauboots,r.max){
 
 ## Comparing IDSpatialStats::get.tau() & tauodds::getTau2OddsMeasles()
 ```{r compare point estimator functions}
+testthat::test_that("comparing point estimator functions",{
 setwd(intrmd8path)
 load(file = "tau.hagg.RData")
 dist.gap = 50
@@ -278,8 +279,9 @@ r.max = seq(10,124,2)
 r.min = r.max-dist.gap
 r.min[which(r.min < 0)] = 0
 tau.hagg1 = tauodds::getTau2OddsMeasles(X$x.loc, X$y.loc, X$tPRO, r.min, r.max, index = as.integer(1:nrow(X)), importT1 = 0,importT2 = 14)
-expect_equal(tau.hagg, tau.hagg1, tolerance=1e-07) # equal up to 1e-07 but results are 
+testthat::expect_equal(tau.hagg, tau.hagg1, tolerance=1e-07) # equal up to 1e-07 but results are 
 # different at 1e-08.
+})
 ```
 
 ## Toy problem to validate the bootstrap methods
@@ -288,7 +290,6 @@ functions do not produce the expected output, otherwise they will complete silen
 
 ```{r testing_with_toy_model}
 # specify the toy system----
-library(testthat)
 toy = matrix(c(0,0,1,0,1,2,1,0,5,1,1,14,1,2,9), nrow = 5, ncol = 3, 
 dimnames = list(NULL,c("x","y","t")), byrow = TRUE)
 toy.r.max = c(1.1,2) # two distance bands
@@ -301,27 +302,27 @@ hagg.func <- function(a, b, tlimit=4){
 }
 
 # run Lessler's and our function on this----
-test_that("comparing Lessler RISB, RISB, MPSB and MMPSB, against non-computer calcs",{
+testthat::test_that("comparing Lessler RISB, RISB, MPSB and MMPSB, against non-computer calcs",{
 set.seed(seed = 1)
 lessler.RISB = IDSpatialStats::get.tau.bootstrap(toy, hagg.func, r = toy.r.max, 
   r.low = toy.r.min, boot.iter = 1, comparison.type = "independent") # the inds that
   # get.tau.bootstrap() used were read from additional print statements added to their 
   # code and input into ours.
-expect_equal(object = lessler.RISB[,3], expected = c(3.5,0.0)) #PASS
+testthat::expect_equal(object = lessler.RISB[,3], expected = c(3.5,0.0)) #PASS
 
 inds = c(1,4,1,2,5) # this is the inds that is used for get.tau.bootstrap as printed off 
   # when it had an extra printf statement in the get.tau.bootstrap program
 pollington.RISB = tauodds::getTau2OddsMeasles(toy[,"x"], toy[,"y"], toy[,"t"], toy.r.min, 
   toy.r.max, as.integer(inds), 0, 4)
-expect_equal(object = pollington.RISB, expected = c(3.5,0.0), tolerance = 1e-06) #PASS
+testthat::expect_equal(object = pollington.RISB, expected = c(3.5,0.0), tolerance = 1e-06) #PASS
 
 pollington.MPSB = tauodds::getTau2Loh(toy[,"x"], toy[,"y"], toy[,"t"], toy.r.min, 
   toy.r.max, as.integer(inds), 0, 4) 
-expect_equal(object = pollington.MPSB, expected = c(0.5,0.25))
+testthat::expect_equal(object = pollington.MPSB, expected = c(0.5,0.25))
 
 pollington.MMPSB = tauodds::getTau2Lohv2(toy[,"x"], toy[,"y"], toy[,"t"], toy.r.min, 
   toy.r.max, as.integer(inds), 0, 4)
-expect_equal(object = pollington.MMPSB, expected = c(13/7,13/35), 
+testthat::expect_equal(object = pollington.MMPSB, expected = c(13/7,13/35), 
              tolerance = 1e-03)
 })
 ```
@@ -498,27 +499,12 @@ dev.off()
 ![Global Envelope Test](./figs/get.pdf){width=100%}
 
 # Parameter estimation of $\hat{D}$---the endpoint of spatiotemporal clustering
-The `ciIntercept()` function identifies the values of d where $\tau(\hat{d}) = 1$ for the `d.envelope`.
+Our `ciIntercept()` function identifies the first value of d where $\hat{\tau}(d) = 1$ for the `d.envelope`.
 
-## Number of bootstrap estimates
-```{r no of bootstrap estimates, eval = FALSE}
-# generate 100 and 2500 bootstrap estimates----
-set.seed(seed = 5)
-ptm = proc.time()
-tauCItmp2500noinfs = summonTauBstrapnoinfs(as.matrix(hag.dat), r.min, r.max, 
-bootiters = 2500, T1 = 0, T2 = 14)
-proc.time() - ptm # 21·955s
-setwd(intrmd8path)
-save(tauCItmp2500noinfs, file = "tauCItmp2500noinfs.RData")
-set.seed(seed = 6)
-tauCItmp100noinfs = summonTauBstrapnoinfs(as.matrix(hag.dat), r.min, r.max, 
-bootiters = 100, T1 = 0, T2 = 14)
-save(tauCItmp100noinfs, file = "tauCItmp100noinfs.RData")
-```
 ```{r ciintercept}
 # ciIntercept() function----
-ciIntercept <- function(n.sim, mid.set, tau.sim) {
-  j.max = length(mid.set)
+ciIntercept <- function(n.sim, end.set, tau.sim) {
+  j.max = length(end.set)
   # now define d.envelope
   alwaysabove1 = 0
   d.envelope = NULL
@@ -530,8 +516,8 @@ ciIntercept <- function(n.sim, mid.set, tau.sim) {
         j = j + 1
         if(tau.sim[i,j] <= 1){ # else it stays above tau = 1 until the next j is tested
           stillabove1 = FALSE
-          root.tau1 = ((1-tau.sim[i,(j-1)])*(mid.set[j]-mid.set[j-1])/
-                         (tau.sim[i,j]-tau.sim[i,(j-1)]))+mid.set[j-1]
+          root.tau1 = ((1-tau.sim[i,(j-1)])*(end.set[j]-end.set[j-1])/
+                         (tau.sim[i,j]-tau.sim[i,(j-1)]))+end.set[j-1]
           d.envelope = c(d.envelope, root.tau1)
         }
       }
@@ -546,6 +532,22 @@ ciIntercept <- function(n.sim, mid.set, tau.sim) {
   print(paste0("alwaysabove1 = ",alwaysabove1/n.sim*100,"%"))
   return(d.envelope)
 }
+```
+
+## Number of bootstrap estimates
+```{r no of bootstrap estimates, eval = FALSE}
+# generate 100 and 2500 bootstrap estimates----
+set.seed(seed = 5)
+ptm = proc.time()
+tauCItmp2500noinfs = summonTauBstrapnoinfs(as.matrix(hag.dat), r.min, r.max, 
+bootiters = 2500, T1 = 0, T2 = 14)
+proc.time() - ptm # 29s
+setwd(intrmd8path)
+save(tauCItmp2500noinfs, file = "tauCItmp2500noinfs.RData")
+set.seed(seed = 6)
+tauCItmp100noinfs = summonTauBstrapnoinfs(as.matrix(hag.dat), r.min, r.max, 
+bootiters = 100, T1 = 0, T2 = 14)
+save(tauCItmp100noinfs, file = "tauCItmp100noinfs.RData")
 ```
 
 Note that some chunks have had `warning=FALSE` set, to silence messages about "pch value '255' is invalid in this locale". Running code appears to plot the graphs as intended.
