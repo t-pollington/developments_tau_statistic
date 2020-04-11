@@ -382,15 +382,15 @@ dev.off()
 
 # graphical abstract version----
 pdf("taureproduction.ga.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
-plot(r.mid, tau.hagg, ylim=c(0.6,max(tau.ci[2,])+0.5), type="l", xlim=c(0,100), yaxt="n", 
+plot(r.max, tau.hagg, ylim=c(0.6,max(tau.ci[2,])+0.5), type="l", xlim=c(0,100), yaxt="n", 
      axes=FALSE, xaxs="i", yaxs="i", col = "black", log = "y",
      xlab = latex2exp::TeX('Distance from average case, $d$'), ylab = "", lwd = 8, cex.lab = 2)
 mtext(latex2exp::TeX('$\\tau$'), side = 2, cex = 2, las = 1, line = 2, lwd = 4)
 axis(2, las=1, at=c(0.6,1,12.0), labels = c("0·6","1","12"), cex = 2, lwd = 4)
 axis(1, las=1, at = c(0,50,100), labels = c("0","50","100"), cex = 2, lwd = 4)
 abline(h=1, lty=2, col=1, lwd = 4)
-lines(r.mid, tauCI[1,], col = "slategrey", lwd = 8)
-lines(r.mid, tauCI[2,], col = "slategrey", lwd = 8)
+lines(r.max, tauCI[1,], col = "slategrey", lwd = 8)
+lines(r.max, tauCI[2,], col = "slategrey", lwd = 8)
 dev.off()
 ```
 ![Reproducing Lessler et al's Fig4C using our own tau functions](./figs/taureproduction.pdf){width=100%}
