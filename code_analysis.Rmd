@@ -885,15 +885,13 @@ dev.off()
 ```
 ![Bootstrap simulations versus the point estimate for the MMPB sampling methods versus Loh & Stein, using 2,500 bootstrap estimates.](./figs/loh.pdf){width=100%}
 
-The CIs for Loh & Stein are unreliable as they are only formed from only 77.4% of simulations that are crossing $\tau = 1$, as a result it does not contain the point estimate line $\hat{\tau}(d)$. Loh & Stein's simulation lines poorly underestimate $\hat{\tau}$ for short distances and overestimate it for most medium to large distances.
+The CIs for Loh & Stein are unreliable as they are only formed from only 77·4% of simulations that are crossing $\tau = 1$, as a result it does not contain the point estimate line $\hat{\tau}(d)$. Loh & Stein's simulation lines poorly underestimate $\hat{\tau}$ for short distances and overestimate it for most medium to large distances.
 
 ## Distance bands
-We do a simple analysis of the case distance distribution to propose a reasonable distance band set. We then compare this to the one used by Lessler et al in their measles analysis to see how much the estimates change.
+We do a simple analysis of the case distance distribution to propose a reasonable distance band set. We then compare this to the one used by Lessler et al. in their measles analysis and see how the estimates differ.  
 ```{r distance bands, eval = FALSE}
 setwd(intrmd8path)
 load(file = "d.envelope2500lohv2.RData")
-load("tausims.loh2.RData")
-load("tau.hagg.RData")
 load("dintercept.pointestimate.RData")
 
 dist.cases = spatstat::crossdist(X$x.loc, X$y.loc, X$x.loc, X$y.loc)
@@ -912,31 +910,37 @@ seq.int(from = 15, to = (ceiling(max(dist.cases)/5)*5),by = 5))
 hist(dist.cases, xlab = "Pairwise distance between cases (m)", breaks = dist.bands,
 main="Distance histogram (ignoring pairs separated by >200m)", freq = FALSE, xaxs = "i", 
 yaxs = "i")
-abline(v = 200)
+abline(v = 200, col = "red")
 
-# this would be a reasonable distance band set to start with i.e. 5m increments seems
-# reasonable as it is the size of a very small house and one would not expect the disease
-# dynamics to change on a spatial scale smaller than this.
-# however from the descriptive analysis of the case distance distribution we join some
-# distance bands together:
 dist.bands = c(0, floor(first.nonzero.dist), seq.int(from = 15,to = 200,by = 5))
-tau.newdb = summonTau(as.matrix(hag.dat), r.min = sort(rev(dist.bands)[-1]), 
-r.max = dist.bands[-1], T1 = 0, T2 = 14)
+r.min.newdb = sort(rev(dist.bands)[-1])
+r.max.newdb = dist.bands[-1]
+tau.newdb = summonTau(as.matrix(hag.dat), r.min = r.min.newdb, 
+r.max = r.max.newdb, T1 = 0, T2 = 14)
+
+dist.gap = 50
+r.max = seq(10,200,2)
+r.min = r.max-dist.gap
+r.min[which(r.min < 0)] = 0
+tausims.loh2 = summonTauBstraplohv2(as.matrix(hag.dat), r.min, r.max, 2500, T1= 0, 
+T2 = 14)
+
+tau.hagg.newdb = IDSpatialStats::get.tau(hag.dat, hagg.func, r=r.max, r.low=r.min, 
+comparison.type = "independent")$tau
 
 set.seed(seed = 12)
 ptm = proc.time()
 tau.sims.newdb = summonTauBstraplohv2(X.region = as.matrix(hag.dat), 
-r.min = sort(rev(dist.bands)[-1]), r.max = dist.bands[-1], bootiters = 2500, 
+r.min = r.min.newdb, r.max = r.max.newdb, bootiters = 2500, 
 T1= 0, T2 = 14)
-proc.time() - ptm # 11·523s
-mid.newdb = 0.5*(sort(rev(dist.bands)[-1]) + dist.bands[-1])
-d.envelope2500lohv2.newdb = ciIntercept(2500, mid.set = mid.newdb, 
+proc.time() - ptm # 12s
+d.envelope2500lohv2.newdb = ciIntercept(2500, end.set = r.max.newdb, 
 tau.sim = tau.sims.newdb)
 firstbelow1.newdb = which(tau.newdb < 1)[1]
 y1 = tau.newdb[firstbelow1.newdb-1]
 y2 = tau.newdb[firstbelow1.newdb]
-x1 = mid.newdb[firstbelow1.newdb-1]
-x2 = mid.newdb[firstbelow1.newdb]
+x1 = r.max.newdb[firstbelow1.newdb-1]
+x2 = r.max.newdb[firstbelow1.newdb]
 m = (y2-y1)/(x2-x1)
 dintercept.pointestimate.newdb = (1+m*x1-y1)/m
 
@@ -949,48 +953,50 @@ hist(d.envelope2500lohv2)
 
 setwd(figspath)
 pdf("distband.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
-plot(NULL, xlim = c(0,100), log="y", ylim = c(0.3, (max(tausims.loh2[,1], 
+plot(NULL, xlim = c(0,120), log="y", ylim = c(0.3, (max(tausims.loh2[,1], 
 tau.sims.newdb[,1])+4)), xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", 
 ylab = "", 
 xlab = "", lwd = 4)
 mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
 mtext(latex2exp::TeX(
-'Distance band midpoint (1/2$(d_l + d_m)$),'), side=1, line=3, cex = 1.5)
+'Distance band endpoint (1/2$(d_l + d_m)$),'), side=1, line=3, cex = 1.5)
 mtext(latex2exp::TeX(
 'from an average case (m). See caption for details.'), side=1, line=4, cex = 1.5)
 for (i in 1:2500) {
-  lines(mid.newdb, tau.sims.newdb[i,], col = scales::alpha("grey", 
+  lines(r.max.newdb, tau.sims.newdb[i,], col = scales::alpha("grey", 
   alpha = 0.2), lwd = 4)
 }
 for (i in 1:2500) {
-  lines(r.mid, tausims.loh2[i,], col = scales::alpha("green", alpha = 0.2), lwd = 4)
+  lines(r.max, tausims.loh2[i,], col = scales::alpha("green", alpha = 0.2), lwd = 4)
 }
 axis(2, las=1, at=c(0.3,1,2,4,11), labels = c("0·3","1","2·0","4·0","11·0"), lwd = 4)
 axis(1, lwd = 4)
-lines(x = c(0,100), y = c(1,1), lty = 2, lwd = 4) # as abline seems to overlap
+lines(x = c(0,120), y = c(1,1), lty = 2, lwd = 4) # as abline seems to overlap
 par(lend=1);
 lines(x = coxed::bca(d.envelope2500lohv2.newdb, conf.level = 0.95), y=c(1.03,1.03),
 type = "l",lwd = 20, col = "red")
 lines(x = coxed::bca(d.envelope2500lohv2, conf.level = 0.95), y=c(0.97,0.97),type = "l",
 lwd = 20, col = "blue")
-lines(x=c(dintercept.pointestimate.newdb,dintercept.pointestimate.newdb), y = c(0.9,1.1), lwd = 8)
-lines(r.mid,tau.hagg, col = "black", lty = 1, lwd = 4)
-lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lwd = 8, col = "gray30")
-lines(mid.newdb, tau.newdb, col = "black", lty = 2, lwd = 4)
+lines(x=c(dintercept.pointestimate.newdb,dintercept.pointestimate.newdb), y = c(0.9,1.1), 
+      lwd = 8)
+lines(r.max,tau.hagg.newdb, col = "black", lty = 1, lwd = 4)
+lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lwd = 8, 
+      col = "gray30")
+lines(r.max.newdb, tau.newdb, col = "gray38", lty = 1, lwd = 4)
 legend(x = 20, y = 6.5, 
 legend=c(latex2exp::TeX(
-'$\\hat{\\tau}$ point estimate & $\\hat{D}$ (overlapping dist. band)'), latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$ simulations'), 
+'$\\hat{\\tau}$ point estimate & $\\hat{D}$ (overlapping dist. band)'), latex2exp::TeX('$\\hat{\\tau}^*$ simulations'), 
 latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'), 
 latex2exp::TeX(
 '$\\hat{\\tau}$ point estimate & $\\hat{D}$ (non-overlapping dist. band)'),
-latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$ simulations'), 
+latex2exp::TeX('$\\hat{\\tau}^*$ simulations'), 
 latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'),
 latex2exp::TeX('$\\tau = 1$')), 
-col=c("black", "green", "blue", "black", "grey", "red", "black"), lty=c(1,1,1,2,1,1,2), 
+col=c("black", "green", "blue", "gray38", "grey", "red", "black"), lty=c(1,1,1,1,1,1,2), 
 lwd = c(6,6,30,6,6,30,6), pch = c(124,NA,NA,124,NA,NA,NA), cex=1.05, yjust = 0.5)
 dev.off()
 ```
-![Bootstrap simulations versus the point estimate for a reasonably-proposed example non-overlapping distance band set versus the overlapping one used by Lessler et al in their measles analysis.](./figs/distband.pdf){width=100%}
+![Bootstrap simulations versus the point estimate for a reasonably-proposed example non-overlapping distance band set versus the overlapping one used by Lessler et al. in their measles analysis.](./figs/distband.pdf){width=100%}
 
 Cases are separated from 0m to just over 300m with a median of 108m. Using distance bands starting at 0m (within household) and then including the first non-zero distance separations from 7·9m to 10m and in 5m increments up to 200m, does not properly cover the [7·9,10] band properly which may affect the estimation. We therefore combine the second and third distance bands to get {0,7,15,20,25,...,200}. We end the distance bands at 200m as there the number of pairs fall off after this point. This now forms the distance band set for our analysis---we now compute `tau.sims.newdb` and compare with Lessler's analysis. 
 
