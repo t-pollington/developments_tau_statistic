@@ -589,27 +589,27 @@ for (i in 1:2500) {
   lines(r.max, tauCItmp2500noinfs[i,], col = scales::alpha("grey", alpha = 0.2), lwd = 4)
 }
 for (i in 1:100) {
-  lines(end.set, tauCItmp100noinfs[i,], col = scales::alpha("green", alpha = 0.2), lwd = 4)
+  lines(r.max, tauCItmp100noinfs[i,], col = scales::alpha("green", alpha = 0.2), lwd = 4)
 }
 axis(2, las=1, at=c(0.5,1,2,4,8,16,32,64,93), labels = c("0·5","1","2·0","4·0","8·0",
 "16·0","32·0","64·0","93·0"), lwd = 4)
 axis(1, lwd = 4)
-lines(x = c(0,100), y = c(1,1), lty = 2, lwd = 4) # as abline seems to overlap
+lines(x = c(0,120), y = c(1,1), lty = 2, lwd = 4) # as abline seems to overlap
 par(lend=1);
 lines(x = as.numeric(quantile(d.envelope2500, probs = c(0.025,0.975))), y=c(1.03,1.03),
 type = "l", lwd = 20, col = "red")
 lines(x = as.numeric(quantile(d.envelope100, probs = c(0.025,0.975))), y=c(0.97,0.97), 
 type = "l", lwd = 20, col = "blue")
 lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lwd = 8)
-lines(end.set, tau.hagg, lwd = 4)
+lines(r.max, tau.hagg, lwd = 4)
 legend(x = 40, y = 32, 
 legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate & $\\hat{D}$'),
-latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$ bootstrap estimate (N=2500)'), 
+latex2exp::TeX('$\\hat{\\tau}^*$ bootstrap estimates (N=2500)'), 
 latex2exp::TeX('    $\\bullet$  95% percentile CI of $\\underline{D}$'), 
-latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$ bootstrap estimate (N=100)'), 
+latex2exp::TeX('$\\hat{\\tau}^*$ bootstrap estimates (N=100)'), 
 latex2exp::TeX('    $\\bullet$  95% percentile CI of $\\underline{D}$'),
 latex2exp::TeX('$\\tau = 1$')), col=c("black", "grey", "red", "green", "blue", "black"),
-lty=c(1,1,1,1,1,2), lwd = c(6,6,30,6,30,6), pch = c(124,NULL,NULL,NULL,NULL,NULL), cex=1.05, 
+lty=c(1,1,1,1,1,2), lwd = c(6,6,30,6,30,6), pch = c(124,NA,NA,NA,NA,NA), cex=1.05, 
 yjust = 0.5)
 dev.off()
 ```
