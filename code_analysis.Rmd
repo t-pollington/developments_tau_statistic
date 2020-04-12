@@ -553,8 +553,7 @@ bootiters = 100, T1 = 0, T2 = 14)
 save(tauCItmp100noinfs, file = "tauCItmp100noinfs.RData")
 ```
 
-Note that some chunks have had `warning=FALSE` set, to silence messages about "pch value '255' is invalid in this locale". Running code appears to plot the graphs as intended.
-```{r compute d.envelope, eval = FALSE, warning=FALSE}
+```{r compute d.envelope, eval = FALSE}
 # compute d.envelope by number of bootstrap estimates (100 or 2500)----
 setwd(intrmd8path)
 load(file = "tau.hagg.RData")
@@ -647,7 +646,7 @@ A better alternative is the *BCa confidence interval* using `coxed::bca()` which
 ## Spatial bootstrap
 
 ### Number of bootstrap estimates & bootstrap sampling method
-```{r CI construction, eval = FALSE, warning=FALSE}
+```{r CI construction, eval = FALSE}
 setwd(intrmd8path)
 load("d.envelope2500.RData")
 load("d.envelope100.RData")
@@ -759,7 +758,7 @@ latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$: modified marked point (N=2500)'),
 latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'),
 latex2exp::TeX('$\\tau = 1$')), 
 col=c("black", "grey", "red", "green", "blue", "black"), lty=c(1,1,1,1,1,2), 
-lwd = c(6,6,30,6,30,6), pch = c(124,256,256,256,256,256), cex=1.05, yjust = 0.5)
+lwd = c(6,6,30,6,30,6), pch = c(124,NA,NA,NA,NA,NA), cex=1.05, yjust = 0.5)
 dev.off()
 
 # graphical abstract version----
@@ -816,7 +815,7 @@ Lessler et al use the resampled-index as the standard bootstrap sampling method 
 
 ### Modified marked point bootstrap vs Loh & Stein
 This chunk explains why MMPB is better than the standard Loh & Stein's implementation for the tau statistic.
-```{r spatialbstrap, eval = FALSE, warning=FALSE}
+```{r spatialbstrap, eval = FALSE}
 setwd(intrmd8path)
 load("tau.hagg.RData")
 load("d.envelope2500lohv2.RData")
@@ -876,7 +875,7 @@ latex2exp::TeX(
 latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'),
 latex2exp::TeX('$\\tau = 1$')), 
 col=c("black", "grey", "red", "green", "blue", "black"), lty=c(1,1,1,1,1,2), 
-lwd = c(6,6,30,6,30,6), pch = c(124,256,256,256,256,256), cex=1.05, yjust = 0.5)
+lwd = c(6,6,30,6,30,6), pch = c(124,NA,NA,NA,NA,NA), cex=1.05, yjust = 0.5)
 dev.off()
 ```
 ![Bootstrap simulations versus the point estimate for the MMPB sampling methods versus Loh & Stein, using 2,500 bootstrap estimates.](./figs/loh.pdf){width=100%}
@@ -885,7 +884,7 @@ The CIs for Loh & Stein are unreliable as they are only formed from only 77.4% o
 
 ## Distance bands
 We do a simple analysis of the case distance distribution to propose a reasonable distance band set. We then compare this to the one used by Lessler et al in their measles analysis to see how much the estimates change.
-```{r distance bands, eval = FALSE, warning=FALSE}
+```{r distance bands, eval = FALSE}
 setwd(intrmd8path)
 load(file = "d.envelope2500lohv2.RData")
 load("tausims.loh2.RData")
@@ -983,7 +982,7 @@ latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$ simulations'),
 latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'),
 latex2exp::TeX('$\\tau = 1$')), 
 col=c("black", "green", "blue", "black", "grey", "red", "black"), lty=c(1,1,1,2,1,1,2), 
-lwd = c(6,6,30,6,6,30,6), pch = c(124,256,256,124,256,256,256), cex=1.05, yjust = 0.5)
+lwd = c(6,6,30,6,6,30,6), pch = c(124,NA,NA,124,NA,NA,NA), cex=1.05, yjust = 0.5)
 dev.off()
 ```
 ![Bootstrap simulations versus the point estimate for a reasonably-proposed example non-overlapping distance band set versus the overlapping one used by Lessler et al in their measles analysis.](./figs/distband.pdf){width=100%}
