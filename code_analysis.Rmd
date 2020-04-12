@@ -723,10 +723,14 @@ dev.off()
 
 # graphical abstract version----
 pdf("bootstraphistv2.ga.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
-hist(d.envelope2500lohv2,breaks = seq.int(10,55,7.5), xaxs = "i", yaxs = "i", ylab = NULL, yaxt = "n", main = NULL, xlab = latex2exp::TeX('$\\underline{D}$ (m)'), cex = 2, cex.lab = 2, lwd = 4)
-axis(2, las = 1, at = c(0,800), labels = c("0","800"), lwd = 4)
+hist(d.envelope2500lohv2,breaks = seq.int(0,110,7.5), xaxs = "i", yaxs = "i", ylab = NULL,
+     yaxt = "n", main = NULL, xlab = latex2exp::TeX('$\\underline{D}$ (m)'), cex = 2, 
+     cex.lab = 2, lwd = 4, ylim = c(0,1160))
+axis(2, las = 1, at = c(0,1000), labels = c("0","1000"), lwd = 4)
 abline(v = dintercept.pointestimate, lty = 2, lwd = 16, col = "black")
+lines(x = coxed::bca(d.envelope2500lohv2), y = c(0,0), lty = 1, lwd = 24, col = "purple")
 dev.off()
+
 coxed::bca(d.envelope2500, conf.level = 0.95)
 coxed::bca(d.envelope2500lohv2, conf.level = 0.95)
 
@@ -789,11 +793,9 @@ dev.off()
 
 ![Bootstrap simulations versus the point estimate for different bootstrap sampling methods using 2,500 bootstrap estimates; both CIs used 100% of simulations.](./figs/nbstrapv2.pdf){width=100%}
 
-It turns out that the number of bootstrap estimates does not make a large difference to the precision of BCa confidence intervals. They appear to be slightly narrower for N=2500. However as we know the $\hat{d}$ distribution is non-symmetric, theoretically the BCa CI should be relied upon more than the percentile CI.
+It turns out that the number of bootstrap estimates does not make a large difference to the precision of BCa confidence intervals. They appear to be slightly narrower for N=2500. However as we know the $\underline{D}$ distribution is non-symmetric, the BCa CI should be relied upon rather than the percentile CI.
 
-However the effect of the sampling method is far more obvious and goes to show that the *modified marked point bootstrap* (MMPB) method far outperforms the resampled index method, especially when used together with high numbers of sampling estimates where an interaction effect of these two implementations appears to be at play; interestingly the skew also reverses in this instance unlike the other three plots.
-
-As a result, MMPB CIs are much narrower (more precise).
+However the effect of the sampling method is far more obvious and goes to show that the *modified marked point bootstrap* (MMPB) method far outperforms the resampled index method, especially when used together with a higher number of sampling estimates; here the skew also reverses unlike the other three plots. As a result, MMPB CIs are narrower (more precise).
 
 ### Typical information loss when bootstrapping
 To indicate the typical information lost for the MMPB approach versus the resampled-index.
