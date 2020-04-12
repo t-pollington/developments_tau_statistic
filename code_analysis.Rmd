@@ -273,9 +273,9 @@ summonTauCI <- function(tauboots,r.max){
 ```{r compare point estimator functions}
 testthat::test_that("comparing point estimator functions",{
 setwd(intrmd8path)
-load(file = "tau.hagg.RData")
+load(file = "tau.hagg.RData") # created later in the "validate tau functions" chunk
 dist.gap = 50
-r.max = seq(10,124,2)
+r.max = seq(10,120,2)
 r.min = r.max-dist.gap
 r.min[which(r.min < 0)] = 0
 tau.hagg1 = tauodds::getTau2OddsMeasles(X$x.loc, X$y.loc, X$tPRO, r.min, r.max, index = as.integer(1:nrow(X)), importT1 = 0,importT2 = 14)
@@ -341,7 +341,7 @@ hagg.func <- function(a, b, tlimit=14){ # time-relatedness interval [T_1 = 0, T_
 }
 
 dist.gap = 50
-r.max = seq(10,124,2)
+r.max = seq(10,120,2)
 r.min = r.max-dist.gap
 r.min[which(r.min < 0)] = 0
 # r.mid = (r.max+r.min)/2 # note that plotting the midpoint is deprecated to reduce 
@@ -425,7 +425,7 @@ ptm = proc.time()
 hag.permute = IDSpatialStats::get.tau.permute(posmat = as.matrix(hag.dat), 
 fun = hagg.func, r = r.max, r.low = r.min, permutations = 2500, 
 comparison.type = "independent")
-proc.time() - ptm # 875·221s ~ 15mins
+proc.time() - ptm # 845s ~ 14mins
 setwd(intrmd8path)
 save(hag.permute, file = "hag.permute.RData")
 
@@ -436,7 +436,7 @@ curveset = GET::create_curve_set(list(r = r.max, obs = tau.hagg,
 res.cr = GET::global_envelope_test(curve_sets = curveset, type = "rank", alpha = 0.05,
 alternative = c("two.sided"), ties = "erl", probs = c(0.025, 0.975), quantile.type = 7, 
 central = "median")
-round(attr(res.cr,"p_interval"), digits = 3) # p-value range
+round(attr(res.cr,"p_interval"), digits = 3) # p-value range [0·000, 0·013]
 
 # GET plot----
 setwd(figspath)
@@ -464,7 +464,7 @@ legend(x = 55, y = 3.4, legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate')
 latex2exp::TeX('$\\tau = 1$')), col=c("black", "slategrey", "grey", "red", "black"),
 lty=c(1,1,1,1,2), cex=1.05, yjust = 0.5, lwd = 6)
 par(xpd = TRUE)
-text(latex2exp::TeX('$\\textit{p}$-value$\\in\\lbrack$0,0·014$\\rbrack$'), x = 85, y = 1.4)
+text(latex2exp::TeX('$\\textit{p}$-value$\\in\\lbrack$0,0·013$\\rbrack$'), x = 85, y = 1.4)
 dev.off()
 
 # graphical abstract version----
@@ -491,7 +491,7 @@ lines(x = c(res.cr1$r[10],res.cr1$r[10]+0.6*(res.cr1$r[11] - res.cr1$r[10])), y 
 lines(res.cr1$r[44:46], res.cr1$obs[44:46], lwd = 16)
 lines(x = c(10,100), y = c(1,1), lty = 2, lwd = 8)
 par(xpd = TRUE)
-mtext(side = 3, text = latex2exp::TeX('p-value$\\in\\lbrack$ 0,0·014 $\\rbrack$'), 
+mtext(side = 3, text = latex2exp::TeX('p-value$\\in\\lbrack$ 0,0·013 $\\rbrack$'), 
 outer = 0, cex = 2, lwd = 4)
 dev.off()
 ```
@@ -569,35 +569,27 @@ save(d.envelope100, file = "d.envelope100.RData")
 
 # compute where on d-axis the point estimate intercepts tau(d) = 1----
 firstbelow1 = which(tau.hagg < 1)[1] # when does the point estimate first fall below tau=1
-y1 = tau.hagg[firstbelow1-1]
-y2 = tau.hagg[firstbelow1]
-x1 = r.mid[firstbelow1-1]
-x2 = r.mid[firstbelow1]
-m = (y2-y1)/(x2-x1)
-dintercept.pointestimate = (1+m*x1-y1)/m
-rm(m,y1,y2,x1,x2) # removed to prevent confusions as used in later chunks
-
 dintercept.pointestimate = ((1-tau.hagg[firstbelow1-1])*
-(r.mid[firstbelow1]-r.mid[firstbelow1-1])/
-(tau.hagg[firstbelow1]-tau.hagg[firstbelow1-1]))+r.mid[firstbelow1-1]
-dintercept.pointestimate
+(r.max[firstbelow1]-r.max[firstbelow1-1])/
+(tau.hagg[firstbelow1]-tau.hagg[firstbelow1-1]))+r.max[firstbelow1-1]
+dintercept.pointestimate #print
 save(dintercept.pointestimate, file = "dintercept.pointestimate.RData")
 
 setwd(figspath)
 pdf("nbstrap.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
-plot(NULL, xlim = c(0,100), log="y", ylim = c(min(tauCItmp2500noinfs),
+plot(NULL, xlim = c(0,120), log="y", ylim = c(min(tauCItmp2500noinfs),
 max(tauCItmp2500noinfs)), xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", 
 ylab = "", xlab = "")
 mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
 mtext(latex2exp::TeX(
-'Distance band midpoint (1/2$(d_l + d_m)$) at 2m increments,'), side=1, line=3, cex = 1.5)
+'Distance band endpoint (1/2$(d_l + d_m)$)'), side=1, line=3, cex = 1.5)
 mtext(latex2exp::TeX(
 'from an average case (m)'), side=1, line=4, cex = 1.5)
 for (i in 1:2500) {
-  lines(r.mid, tauCItmp2500noinfs[i,], col = scales::alpha("grey", alpha = 0.2), lwd = 4)
+  lines(r.max, tauCItmp2500noinfs[i,], col = scales::alpha("grey", alpha = 0.2), lwd = 4)
 }
 for (i in 1:100) {
-  lines(r.mid, tauCItmp100noinfs[i,], col = scales::alpha("green", alpha = 0.2), lwd = 4)
+  lines(end.set, tauCItmp100noinfs[i,], col = scales::alpha("green", alpha = 0.2), lwd = 4)
 }
 axis(2, las=1, at=c(0.5,1,2,4,8,16,32,64,93), labels = c("0·5","1","2·0","4·0","8·0",
 "16·0","32·0","64·0","93·0"), lwd = 4)
@@ -609,7 +601,7 @@ type = "l", lwd = 20, col = "red")
 lines(x = as.numeric(quantile(d.envelope100, probs = c(0.025,0.975))), y=c(0.97,0.97), 
 type = "l", lwd = 20, col = "blue")
 lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lwd = 8)
-lines(r.mid, tau.hagg, lwd = 4)
+lines(end.set, tau.hagg, lwd = 4)
 legend(x = 40, y = 32, 
 legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate & $\\hat{D}$'),
 latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$ bootstrap estimate (N=2500)'), 
@@ -617,7 +609,7 @@ latex2exp::TeX('    $\\bullet$  95% percentile CI of $\\underline{D}$'),
 latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$ bootstrap estimate (N=100)'), 
 latex2exp::TeX('    $\\bullet$  95% percentile CI of $\\underline{D}$'),
 latex2exp::TeX('$\\tau = 1$')), col=c("black", "grey", "red", "green", "blue", "black"),
-lty=c(1,1,1,1,1,2), lwd = c(6,6,30,6,30,6), pch = c(124,256,256,256,256,256), cex=1.05, 
+lty=c(1,1,1,1,1,2), lwd = c(6,6,30,6,30,6), pch = c(124,NULL,NULL,NULL,NULL,NULL), cex=1.05, 
 yjust = 0.5)
 dev.off()
 ```
