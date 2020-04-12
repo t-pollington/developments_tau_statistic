@@ -201,7 +201,7 @@ fig_label <- function(text, region="figure", pos="topleft", cex=NULL, ...) {
 Third-party code in the `figlabel` chunk assists us with figure labelling[@January2017].
 
 # Tau functions {#taufunctions}
-The actual tau functions as coded in the C language can be found in `./tauodds/src/*.cpp` based on adaptations from an older fork (v0.3.7) of the `IDSpatialStats` package [@LesslerGiles].
+The actual tau functions (coded in the C language) can be found in `./tauodds/src/*.cpp` based on adaptations from an older fork (v0.3.7) of the `IDSpatialStats` package [@LesslerGiles].
 
 ## Defining tau functions
 ```{r some-tau-functions}
@@ -279,8 +279,8 @@ r.max = seq(10,120,2)
 r.min = r.max-dist.gap
 r.min[which(r.min < 0)] = 0
 tau.hagg1 = tauodds::getTau2OddsMeasles(X$x.loc, X$y.loc, X$tPRO, r.min, r.max, index = as.integer(1:nrow(X)), importT1 = 0,importT2 = 14)
-testthat::expect_equal(tau.hagg, tau.hagg1, tolerance=1e-07) # equal up to 1e-07 but results are 
-# different at 1e-08.
+testthat::expect_equal(tau.hagg, tau.hagg1, tolerance=1e-07) # equal up to 1e-07 but 
+# results are different at 1e-08.
 })
 ```
 
@@ -614,7 +614,7 @@ dev.off()
 ```
 ![Bootstrap simulations versus the point estimate for 100 or 2,500 bootstrap estimates](./figs/nbstrap.pdf){width=100%}
 
-Bizarrely the number of bootstrap estimates of 100 versus 2500 don't appear to impact the precision of `d.envelope`; both CIs used 100% of simulations. We conjecture that as 100 is similar to the number of cases (188), it can adequately represent the data.
+Unexpectedly the number of bootstrap estimates of 100 versus 2500 don't appear to impact the precision of `d.envelope`; both CIs used 100% of simulations. 
 
 ```{r d envelope distribution, eval = FALSE}
 setwd(intrmd8path)
@@ -624,13 +624,13 @@ load("dintercept.pointestimate.RData")
 setwd(figspath)
 pdf("bootstraphist.pdf")
 par(mfrow = c(1,2))
-hist(d.envelope100, breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", main = "N=100", 
-xlab = latex2exp::TeX('Samples of $\\hat{D} (m)'))
+hist(d.envelope100, breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", main = "N=100", 
+xlab = latex2exp::TeX('Samples of $\\hat{D}$ (m)'))
 abline(v = dintercept.pointestimate, lty = 2, lwd = 2, col = "red")
 abline(v = mean(d.envelope100), lty = 2, lwd = 2, col = "green")
 abline(v = median(d.envelope100), lty = 2, lwd = 2, col = "blue")
-hist(d.envelope2500, breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", ylab = NULL, 
-main = "N=2500", xlab = latex2exp::TeX('Samples of $\\hat{D} (m)'))
+hist(d.envelope2500, breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", ylab = NULL, 
+main = "N=2500", xlab = latex2exp::TeX('Samples of $\\hat{D}$ (m)'))
 abline(v = dintercept.pointestimate, lty = 2, lwd = 2, col = "red")
 abline(v = mean(d.envelope2500), lty = 2, lwd = 2, col = "green")
 abline(v = median(d.envelope2500), lty = 2, lwd = 2, col = "blue")
@@ -638,7 +638,7 @@ dev.off()
 ```
 ![Histogram of the $\hat{D}$ estimates by number of bootstrap estimates](./figs/bootstraphist.pdf){width=100%}
 
-The asymmetric distribution of the $\hat{d}$ estimates suggests the usual *percentile confidence interval* would be a bad choice.
+The asymmetric distribution of $\underline{D}$ suggests the usual *percentile confidence interval* would be a bad choice.
 
 ## BCa confidence interval
 A better alternative is the *BCa confidence interval* using `coxed::bca()` which takes a few seconds extra to run; we decide to test for N=100 or N=2500 as it may be more sensitive to low numbers of bootstrap samples than the percentile CI. 
@@ -664,13 +664,13 @@ ptm = proc.time()
 tauCI2500lohv2 = summonTauBstraplohv2(X.region = as.matrix(hag.dat), r.min = r.min, 
 r.max = r.max, bootiters = 2500, T1 = 0, T2 = 14)
 proc.time() - ptm # 16·542s
-d.envelope2500lohv2 = ciIntercept(2500, mid.set = r.mid, tau.sim = tauCI2500lohv2)
+d.envelope2500lohv2 = ciIntercept(2500, end.set = r.max, tau.sim = tauCI2500lohv2)
 setwd(intrmd8path)
 save(d.envelope2500lohv2, file = "d.envelope2500lohv2.RData")
 set.seed(seed = 6) # set at seed = 6 to compare with tauCItmp100noinfs
 tauCI100lohv2 = summonTauBstraplohv2(X.region = as.matrix(hag.dat), r.min = r.min, 
 r.max = r.max, bootiters = 100, T1 = 0, T2 = 14)
-d.envelope100lohv2 = ciIntercept(100, mid.set = r.mid, tau.sim = tauCI100lohv2)
+d.envelope100lohv2 = ciIntercept(100, end.set = r.max, tau.sim = tauCI100lohv2)
 
 BCa.ci.lohv2.2500 = coxed::bca(d.envelope2500lohv2, conf.level = 0.95)
 percentile.ci.lohv2.2500 = quantile(d.envelope2500lohv2, probs=c(0.025, 0.975), type = 7)
@@ -743,7 +743,7 @@ for (i in 1:2500) {
 }
 axis(2,las=1,at=c(0.5,1,2,4,8,16,32,64,92), labels = c("0·5","1","2·0","4·0","8·0","16·0","32·0","64·0","92·0"), lwd = 4)
 axis(1, lwd = 4)
-lines(x = c(0,100),y = c(1,1),lty = 8) # as abline seems to overlap
+lines(x = c(0,100),y = c(1,1),lty = 8)
 par(lend=1);
 lines(x = coxed::bca(d.envelope2500, conf.level = 0.95), y=c(1.03,1.03), type = "l", 
 lwd = 20, col = "red")
@@ -833,7 +833,7 @@ proc.time() - ptm # 15·429s
 setwd(intrmd8path)
 save(tausims.loh2, file = "tausims.loh2.RData")
 tauCI.loh2 = summonTauCI(tausims.loh2, r.max)
-d.envelope2500lohv1 = ciIntercept(2500, mid.set = r.mid, tau.sim = tausims.loh1) 
+d.envelope2500lohv1 = ciIntercept(2500, end.set = r.max, tau.sim = tausims.loh1) 
 # warning only 77·3% of sims cross tau = 1
 
 setwd(figspath)
