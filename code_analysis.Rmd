@@ -686,32 +686,36 @@ percentile.ci.lohv2.2500
 setwd(figspath)
 pdf("bootstraphistv2.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
 par(mfrow = c(2,2))
-hist(d.envelope100,breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", ylab = "Frequency", 
-main = "N=100, resampled-index", xlab = NULL, lwd = 4)
+hist(d.envelope100,breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", ylab = "Frequency", 
+main = "N=100, resampled-index", xlab = NULL, lwd = 4, ylim = c(0,41))
 fig_label("a", cex = 3, region = "plot", lwd = 4)
-lines(x = coxed::bca(d.envelope100, 0.95), y = c(0,0), lty = 1, lwd = 18, col = "purple")
+lines(x = coxed::bca(d.envelope100, 0.95), y = c(0,0), lty = 1, lwd = 24, col = "purple")
 abline(v = dintercept.pointestimate, lty = 2, lwd = 12, col = "red")
 abline(v = mean(d.envelope100), lty = 2, lwd = 8, col = "green")
 abline(v = median(d.envelope100), lty = 2, lwd = 8, col = "blue")
-hist(d.envelope100lohv2,breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", ylab = NULL, 
-main = "N=100, modified marked point", xlab = NULL, lwd = 4)
+hist(d.envelope100lohv2,breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", ylab = NULL, 
+main = "N=100, modified marked point", xlab = NULL, lwd = 4, ylim = c(0,41))
 fig_label("b", cex = 3, region = "plot", lwd = 4)
-lines(x = coxed::bca(d.envelope100lohv2, 0.95), y = c(0,0), lty = 1, lwd = 18, col = "purple")
+lines(x = coxed::bca(d.envelope100lohv2, 0.95), y = c(0,0), lty = 1, lwd = 24, 
+      col = "purple")
 abline(v = dintercept.pointestimate, lty = 2, lwd = 12, col = "red")
 abline(v = mean(d.envelope100lohv2), lty = 2, lwd = 8, col = "green")
 abline(v = median(d.envelope100lohv2), lty = 2, lwd = 8, col = "blue")
-hist(d.envelope2500,breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", ylab = "Frequency",
+hist(d.envelope2500,breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", 
+     ylab = "Frequency",
 main = "N=2500, resampled-index", 
-xlab = latex2exp::TeX('$\\underline{D}$ (m)'), lwd = 4)
+xlab = latex2exp::TeX('$\\underline{D}$ (m)'), lwd = 4, ylim = c(0,1160))
 fig_label("c", cex = 3, region = "plot", lwd = 4)
-lines(x = coxed::bca(d.envelope2500, conf.level = 0.95), y = c(0,0), lty = 1, lwd = 18, col = "purple")
+lines(x = coxed::bca(d.envelope2500, conf.level = 0.95), y = c(0,0), lty = 1, lwd = 24, 
+      col = "purple")
 abline(v = dintercept.pointestimate, lty = 2, lwd = 12, col = "red")
 abline(v = mean(d.envelope2500), lty = 2, lwd = 8, col = "green")
 abline(v = median(d.envelope2500), lty = 2, lwd = 8, col = "blue")
-hist(d.envelope2500lohv2,breaks = seq.int(0,90,10), xaxs = "i", yaxs = "i", ylab = NULL, 
-main = "N=2500, modified marked point", xlab = latex2exp::TeX('$\\underline{D}$ (m)'), lwd = 4)
+hist(d.envelope2500lohv2,breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", ylab = NULL, 
+main = "N=2500, modified marked point", xlab = latex2exp::TeX('$\\underline{D}$ (m)'), 
+lwd = 4, ylim = c(0,1160))
 fig_label("d", cex = 3, region = "plot", lwd = 4)
-lines(x = coxed::bca(d.envelope2500lohv2), y = c(0,0), lty = 1, lwd = 18, col = "purple")
+lines(x = coxed::bca(d.envelope2500lohv2), y = c(0,0), lty = 1, lwd = 24, col = "purple")
 abline(v = dintercept.pointestimate, lty = 2, lwd = 12, col = "red")
 abline(v = mean(d.envelope2500lohv2), lty = 2, lwd = 8, col = "green")
 abline(v = median(d.envelope2500lohv2), lty = 2, lwd = 8, col = "blue")
