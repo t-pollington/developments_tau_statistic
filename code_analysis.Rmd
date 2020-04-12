@@ -735,34 +735,33 @@ coxed::bca(d.envelope2500, conf.level = 0.95)
 coxed::bca(d.envelope2500lohv2, conf.level = 0.95)
 
 pdf("nbstrapv2.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
-plot(NULL, xlim = c(0,100), log="y", ylim = c(0.5,max(tauCItmp2500noinfs,tauCI2500lohv2)),
+plot(NULL, xlim = c(0,120), log="y", ylim = c(0.5,max(tauCItmp2500noinfs,tauCI2500lohv2)),
 xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", xlab = "", lwd = 4)
 mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
 mtext(latex2exp::TeX(
-'Distance band midpoint (1/2$(d_l + d_m)$) at 2m increments,'), side=1, line=3, cex = 1.5)
-mtext(latex2exp::TeX(
-'from an average case (m)'), side=1, line=4, cex = 1.5)
+'Distance band endpoint (1/2$(d_l + d_m)$)'), side=1, line=3, cex = 1.5)
+mtext(latex2exp::TeX('from an average case (m)'), side=1, line=4, cex = 1.5)
 
 for (i in 1:2500) {
-  lines(r.mid, tauCItmp2500noinfs[i,], col = scales::alpha("grey", alpha = 0.2), lwd = 4)
+  lines(r.max, tauCItmp2500noinfs[i,], col = scales::alpha("grey", alpha = 0.2), lwd = 4)
 }
 for (i in 1:2500) {
-  lines(r.mid, tauCI2500lohv2[i,], col = scales::alpha("green", alpha = 0.2), lwd = 4)
+  lines(r.max, tauCI2500lohv2[i,], col = scales::alpha("green", alpha = 0.2), lwd = 4)
 }
 axis(2,las=1,at=c(0.5,1,2,4,8,16,32,64,92), labels = c("0·5","1","2·0","4·0","8·0","16·0","32·0","64·0","92·0"), lwd = 4)
 axis(1, lwd = 4)
-lines(x = c(0,100),y = c(1,1),lty = 8)
+lines(x = c(0,120),y = c(1,1),lty = 8)
 par(lend=1);
 lines(x = coxed::bca(d.envelope2500, conf.level = 0.95), y=c(1.03,1.03), type = "l", 
 lwd = 20, col = "red")
 lines(x = coxed::bca(d.envelope2500lohv2, conf.level = 0.95), y=c(0.97,0.97), type = "l",
 lwd = 20, col = "blue")
 lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lwd = 8)
-lines(r.mid,tau.hagg, lwd = 4)
+lines(r.max,tau.hagg, lwd = 4)
 legend(x = 40, y = 32, 
-legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate & $\\hat{D}$'), latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$: resampled-index (N=2500)'), 
+legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate & $\\hat{D}$'), latex2exp::TeX('$\\hat{\\tau}^*$: resampled-index (N=2500)'), 
 latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'), 
-latex2exp::TeX('$\\hat{\\underline{\\tau}}^*$: modified marked point (N=2500)'), 
+latex2exp::TeX('$\\hat{\\tau}^*$: modified marked point (N=2500)'), 
 latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'),
 latex2exp::TeX('$\\tau = 1$')), 
 col=c("black", "grey", "red", "green", "blue", "black"), lty=c(1,1,1,1,1,2), 
@@ -776,7 +775,7 @@ xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i",
 ylab = "", 
 xlab = latex2exp::TeX('$d$'), cex.lab = 2, lwd = 8)
 for (i in 1:2500) {
-  lines(r.mid, tauCI2500lohv2[i,], col = scales::alpha("green", alpha = 0.1), lwd = 8)
+  lines(r.max, tauCI2500lohv2[i,], col = scales::alpha("green", alpha = 0.1), lwd = 8)
 }
 axis(2, las=1, at=c(0.6,1,5,10), labels = c("0·6","1","5·0","10·0"), cex = 2, lwd = 4)
 axis(1, las=1, at=c(10,50,100), labels = c("10","50","100"), cex = 2, lwd = 4)
@@ -786,7 +785,7 @@ par(lend=1);
 lines(x = coxed::bca(d.envelope2500lohv2, conf.level = 0.95), y=c(1,1), type = "l",
 col = "blue", lwd = 20)
 lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.95,1.05), lwd = 8)
-lines(r.mid,tau.hagg, lwd = 4)
+lines(r.max,tau.hagg, lwd = 4)
 dev.off()
 ```
 ![Histogram of the $\hat{D}$ estimates by number of bootstrap estimates and bootstrap sampling method. All four CIs used 100% of simulations](./figs/bootstraphistv2.pdf){width=100%}
