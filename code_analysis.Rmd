@@ -1029,7 +1029,7 @@ null.env = apply(null.sim,2, quantile, probs = c(0.025,0.975))
 setwd("figs/")
 pdf("centralnull.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
 par(mfrow = c(1,2))
-plot(NULL, NULL, xlim = c(0,10), ylim = c(0,2), type = "l", xlab = "d", ylab = latex2exp::TeX('$\\tau (d)$'), col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", lwd = 4)
+plot(NULL, NULL, xlim = c(0,10), ylim = c(0.5,2), type = "l", xlab = "d", ylab = latex2exp::TeX('$\\tau (d)$'), col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", lwd = 4)
 axis(1, labels = c(0,2,latex2exp::TeX('$\\hat{D}$'),4,6,8,10), at = c(0,2,2.7,4,6,8,10), lwd = 4)
 axis(2, labels = c("0","0·5","1","1·5","2·0"), at = c(0,0.5,1,1.5,2.0), lwd = 4)
 for (i in 1:100) {
@@ -1040,7 +1040,7 @@ lines(seq.int(0,10), central.env[1,], type = "l", lwd = 4)
 lines(seq.int(0,10), central.env[2,], type = "l", lwd = 4)
 abline(v = 2.7, col = "blue", lty = 2, lwd = 4)
 
-plot(NULL, NULL, xlim = c(0,10), ylim = c(0,2), type = "l", xlab = "d", ylab = "", col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", lwd = 4)
+plot(NULL, NULL, xlim = c(0,10), ylim = c(0.5,2), type = "l", xlab = "d", ylab = "", col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", lwd = 4)
 axis(1, labels = c(0,2,latex2exp::TeX('$\\hat{D}$'),5,6,8,10), at = c(0,2,3.55,5,6,8,10), lwd = 4)
 axis(2, labels = c("0","0·5","1","1·5","2·0"), at = c(0,0.5,1,1.5,2.0), lwd = 4)
 for (i in 1:100) {
@@ -1053,8 +1053,8 @@ lines(seq.int(0,10), tau.sim[1,], type = "l", lwd = 4, col = "blue")
 abline(v = 3.55, col = "blue", lty = 2, lwd = 4)
 dev.off()
 ```
-![Diagram showing how reviewed papers would hypothesis test and estimate parameters simulatenously using central or null envelopes.](./figs/centralnull.pdf){width=100%}
+![Diagram showing how reviewed papers would hypothesis test and estimate parameters simulatenously using central or null envelopes formed from pointwise percentile CIs.](./figs/centralnull.pdf){width=100%}
 ***
 
 # References {#references}
-For a comprehensive list of references of the works that contributed to the study please consult the main paper.
+We feature a list of references for citations made within this code document. However for a comprehensive list of works that contributed to the study please consult the main paper.
