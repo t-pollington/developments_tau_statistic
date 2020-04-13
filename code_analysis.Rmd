@@ -416,32 +416,106 @@ We are confident that `seed = 2` produces a result identical to the original gra
 # Hypothesis testing
 
 ## Global envelope tests
-We construct a *global envelope* around the null hypothesis $H_0=\text{no spatial clustering nor inhibition}$ represented by $\tau=1$ (simulated by time-mark permutations of the dataset). We assess if a region exists where the tau point estimate is above the upper bound or below the lower bound (as a two-tailed test) of this null envelope, using 2,500 iterations. A two-sided test is necessary as until you plot the graph you don't know whether there is clustering, inhibition or both. 
+We construct a *global envelope* around the null hypothesis $H_0=\text{no spatial clustering nor inhibition}$ represented by $\tau=1$ (simulated by time-mark permutations of the dataset). We assess if a region exists where the tau point estimate is above the upper bound or below the lower bound (as a two-tailed test) of this null envelope, using 2,500 iterations. A two-sided test is necessary as until you plot the graph you don't know whether there is clustering, inhibition or both. Unlike for indicative purposes of plotting a tau-distance graph or parameter estimation that we see later, when performing a global hypothesis test we should use a distance band set that covers the entire pairwise distances; first we check at what distance the majority of null simulations unacceptably diverge from $\tau = 1$. We then apply the global envelope test on the range [0,220 m]. 
 ```{r GET, eval = FALSE}
+# determine range of entire distance band set
+dist.cases = spatstat::crossdist(X$x.loc, X$y.loc, X$x.loc, X$y.loc)
+range(dist.cases)
+dist.gap = 50
+r.max.entire = seq(10,320,2)
+r.min.entire = r.max.entire-dist.gap
+r.min.entire[which(r.min.entire < 0)] = 0
+
 # generate 'time mark' permuted dataset----
 # We continued to use IDSpatialStats::get.tau.permute() for this purpose
 set.seed(seed = 4)
 ptm = proc.time()
 hag.permute = IDSpatialStats::get.tau.permute(posmat = as.matrix(hag.dat), 
-fun = hagg.func, r = r.max, r.low = r.min, permutations = 2500, 
-comparison.type = "independent")
-proc.time() - ptm # 845s ~ 14mins
+fun = hagg.func, r = r.max.entire, r.low = r.min.entire, permutations = 2510, 
+comparison.type = "independent") # draw 10 more than the 2500 permutations reqd as will 
+proc.time() - ptm # 34mins for entire distance band
+sum(apply(hag.permute,1,is.infinite)) # 7 infs, need to drop some which contain Infs as 
+# the GET functions cannot run otherwise
 setwd(intrmd8path)
-save(hag.permute, file = "hag.permute.RData")
+save(hag.permute, file = "hag.permute.RData") #change filename here
 
+# subset hag.permute to drop the infs and just get enough for 2500 permutations
+j=3
+count = 1
+hag.permute.noinfs = matrix(0, nrow = 156, ncol = 2500)
+while (j <= 2512 & count < 2501) {
+  if(sum(is.infinite(hag.permute[,j]))==0){
+    hag.permute.noinfs[,count] = hag.permute[,j]
+    count = count + 1
+  }
+  j = j + 1
+}
+sum(apply(hag.permute.noinfs,1,is.infinite)) # 0 PASS
+
+# check that the null simulations is acceptably close to tau = 1
+plot(r.max.entire, apply(hag.permute.noinfs, 1, median), type = "l", col = "red",
+     ylim = c(0.5,10), log = "y", xaxs = "i", yaxs = "i", xlab = "d", xaxt = "n",
+     ylab = latex2exp::TeX('$\\tau (d)$'), lwd = 2)
+lines(r.max.entire, apply(hag.permute.noinfs, 1, mean), col = "blue", lwd = 2)
+lines(r.max.entire, apply(hag.permute.noinfs, 1, quantile, probs = 0.75), 
+      col = "green", lwd = 2)
+lines(r.max.entire, apply(hag.permute.noinfs, 1, max), 
+      col = "darkgreen", lwd = 2)
+lines(r.max.entire, apply(hag.permute.noinfs, 1, quantile, probs = 0.25), 
+      col = "darkorange", lwd = 2)
+lines(r.max.entire, apply(hag.permute.noinfs, 1, min), col = "darkorange3", lwd = 2)
+abline(h = 1, lty = 2, lwd = 2)
+abline(v = 220, col = "darkgray")
+abline(h = seq(0.5,10,0.2), v = seq.int(50,300,50), lty = "dotted", col = "lightgray")
+axis(1, las=1, at=c(0,50,100,150,200,220,250,300), 
+     labels = c("0","50","100","150","200","220","250","300"), lwd = 1)
+legend(x = 30, y = 5, title = "Null simulations", ncol = 2,
+       legend=c("maximum", 
+"upper quartile",
+"mean",
+"median",
+"lower quartile",
+"minimum",
+latex2exp::TeX('$\\tau = 1$')), 
+col=c("darkgreen", "green", "blue", "red", "darkorange","darkorange3","black"),
+lty=c(1,1,1,1,1,1,2), cex=1, yjust = 0.5, lwd = 3)
+tau.hagg.entire = IDSpatialStats::get.tau(hag.dat, hagg.func, r=r.max.entire, 
+                                          r.low=r.min.entire, 
+                                          comparison.type = "independent")$tau
+
+# redo above analysis with distance band set up to and incl. 220 m
+r.max.220 = seq(10,220,2)
+r.min.220 = r.max.220-dist.gap
+r.min.220[which(r.min.220 < 0)] = 0
+tau.hagg.220 = IDSpatialStats::get.tau(hag.dat, hagg.func, r=r.max.220, 
+                                          r.low=r.min.220, 
+                                          comparison.type = "independent")$tau
+
+set.seed(seed = 4)
+ptm = proc.time()
+hag.permute.220 = IDSpatialStats::get.tau.permute(posmat = as.matrix(hag.dat), 
+fun = hagg.func, r = r.max.220, r.low = r.min.220, permutations = 2510, 
+comparison.type = "independent") # draw 10 more than the 2500 permutations reqd as will 
+proc.time() - ptm # 30mins for entire distance band
+sum(apply(hag.permute.220,1,is.infinite)) # 0 infs, no need to drop Infs
+hag.permute.220 = hag.permute.220[,c(-1,-2)]
+setwd(intrmd8path)
+save(hag.permute.220, file = "hag.permute220.RData") #change filename here
+
+
+# GET analysis with entire distance band
 # create curve set for null hypothesis for GET----
-load(file = "tau.hagg.RData")
-curveset = GET::create_curve_set(list(r = r.max, obs = tau.hagg, 
-                                      sim_m = as.matrix(hag.permute)[,c(-1,-2)]))
+curveset = GET::create_curve_set(list(r = r.max.220, obs = tau.hagg.220, 
+                                      sim_m = as.matrix(hag.permute.220)))
 res.cr = GET::global_envelope_test(curve_sets = curveset, type = "rank", alpha = 0.05,
 alternative = c("two.sided"), ties = "erl", probs = c(0.025, 0.975), quantile.type = 7, 
 central = "median")
-round(attr(res.cr,"p_interval"), digits = 3) # p-value range [0·000, 0·013]
+round(attr(res.cr,"p_interval"), digits = 3) # p-value range [0·000, 0·022]
 
 # GET plot----
 setwd(figspath)
 pdf("get.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
-plot(NULL, xlim = c(0,120), ylim = c(min(res.cr$lo, res.cr$obs),max(res.cr$obs)), 
+plot(NULL, xlim = c(0,220), ylim = c(min(res.cr$lo, res.cr$obs),max(res.cr$obs)), 
      xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", xlab = "", lwd = 4,
      cex.lab = 1.5)
 mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
@@ -450,7 +524,8 @@ mtext(latex2exp::TeX(
 mtext(latex2exp::TeX(
 'from an average case (m)'), side=1, line=4, cex = 1.5)
 for (i in 1:2500) {
-  lines(r.max, hag.permute[i,], col = scales::alpha("grey", alpha = 0.3), lwd = 4)
+  lines(r.max.220, hag.permute.220[,i], col = scales::alpha("grey", alpha = 0.3), 
+        lwd = 4)
 }
 axis(2, las=1, at=c(0.7,1,2,3,4), labels = c("0·7","1","2·0","3·0","4·0"), lwd = 4)
 lines(res.cr$r, res.cr$lo, col = "slategrey", lwd = 6)
@@ -459,12 +534,12 @@ lines(res.cr$r, res.cr$central, col = "red", lwd = 6)
 lines(res.cr$r, res.cr$obs, lwd = 4)
 axis(1, lwd = 4)
 abline(h=1, lty = 2, lwd = 4)
-legend(x = 55, y = 3.4, legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate'), 
+legend(x = 120, y = 3.4, legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate'), 
 "95% global envelope",latex2exp::TeX('simulations of $H_0$'), "median simulation",
 latex2exp::TeX('$\\tau = 1$')), col=c("black", "slategrey", "grey", "red", "black"),
 lty=c(1,1,1,1,2), cex=1.05, yjust = 0.5, lwd = 6)
 par(xpd = TRUE)
-text(latex2exp::TeX('$\\textit{p}$-value$\\in\\lbrack$0,0·013$\\rbrack$'), x = 85, y = 1.4)
+text(latex2exp::TeX('$\\textit{p}$-value$\\in\\lbrack$0,0·022$\\rbrack$'), x = 85, y = 1.4)
 dev.off()
 
 # graphical abstract version----
@@ -491,7 +566,7 @@ lines(x = c(res.cr1$r[10],res.cr1$r[10]+0.6*(res.cr1$r[11] - res.cr1$r[10])), y 
 lines(res.cr1$r[44:46], res.cr1$obs[44:46], lwd = 16)
 lines(x = c(10,100), y = c(1,1), lty = 2, lwd = 8)
 par(xpd = TRUE)
-mtext(side = 3, text = latex2exp::TeX('p-value$\\in\\lbrack$ 0,0·013 $\\rbrack$'), 
+mtext(side = 3, text = latex2exp::TeX('p-value$\\in\\lbrack$ 0,0·022 $\\rbrack$'), 
 outer = 0, cex = 2, lwd = 4)
 dev.off()
 ```
