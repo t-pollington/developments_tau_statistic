@@ -499,6 +499,7 @@ comparison.type = "independent") # draw 10 more than the 2500 permutations reqd 
 proc.time() - ptm # 30mins for entire distance band
 sum(apply(hag.permute.220,1,is.infinite)) # 0 infs, no need to drop Infs
 hag.permute.220 = hag.permute.220[,c(-1,-2)]
+hag.permute.220 = hag.permute.220[,1:2500]
 setwd(intrmd8path)
 save(hag.permute.220, file = "hag.permute220.RData") #change filename here
 
@@ -543,12 +544,13 @@ text(latex2exp::TeX('$\\textit{p}$-value$\\in\\lbrack$0,0·022$\\rbrack$'), x = 
 dev.off()
 
 # graphical abstract version----
-r.max1 = r.max[1:46]
+r.max1 = r.max.220[1:46]
 res.cr1 = res.cr[1:46,]
-hag.permute1 = hag.permute[1:46,c(-1,-2)]
+hag.permute1 = hag.permute.220[1:46,]
 
 pdf("get.ga.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
-plot(NULL, xlim = c(10,100), ylim = c(min(res.cr1$lo,res.cr1$obs),max(res.cr1$obs)), xaxt = "n", 
+plot(NULL, xlim = c(10,100), ylim = c(min(res.cr1$lo,res.cr1$obs),max(res.cr1$obs)), 
+     xaxt = "n", 
 yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", 
 xlab = latex2exp::TeX(
 '$d$'), lwd = 8, cex.lab = 2)
@@ -562,7 +564,8 @@ lines(res.cr1$r, res.cr1$lo, col = "slategrey", lwd = 8)
 lines(res.cr1$r, res.cr1$hi, col = "slategrey", lwd = 8)
 lines(res.cr1$r, res.cr1$obs, lwd = 8)
 lines(res.cr1$r[1:10], res.cr1$obs[1:10], lwd = 16)
-lines(x = c(res.cr1$r[10],res.cr1$r[10]+0.6*(res.cr1$r[11] - res.cr1$r[10])), y = c(res.cr1$obs[10],res.cr1$obs[10]+0.6*(res.cr1$obs[11] - res.cr1$obs[10])), lwd = 16, col = "black")
+lines(x = c(res.cr1$r[10],res.cr1$r[10]+0.5*(res.cr1$r[11] - res.cr1$r[10])), y = c(res.cr1$obs[10],res.cr1$obs[10]+0.5*(res.cr1$obs[11] - res.cr1$obs[10])), lwd = 16, 
+      col = "black")
 lines(res.cr1$r[44:46], res.cr1$obs[44:46], lwd = 16)
 lines(x = c(10,100), y = c(1,1), lty = 2, lwd = 8)
 par(xpd = TRUE)
