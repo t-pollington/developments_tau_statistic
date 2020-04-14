@@ -400,7 +400,7 @@ legend(x = 35, y = 8, bg = "white",
     '95% pointwise percentile CI of $\\hat{\\tau}$ ($\\textit{IDSpatialStats}$)'), 
   "End of clustering (defined by Lessler et al.)", 
   latex2exp::TeX('Clustering endpoint point estimate, $\\hat{D}$ (our definition)')),
-col=c("black", "green", "slategrey", "red", "red"), lty=c(1,2,3,1,2), cex=1.05, 
+col=c("black", "green", "slategrey", "red", "red"), lty=c(1,2,3,1,2), cex=0.9, 
 yjust = 0.5, lwd = 6)
 dev.off()
 
@@ -578,7 +578,7 @@ lines(res.cr1$r, res.cr1$obs, lwd = 4)
 lines(res.cr1$r[1:10], res.cr1$obs[1:10], lwd = 16)
 lines(x = c(res.cr1$r[10],res.cr1$r[10]+0.5*(res.cr1$r[11] - res.cr1$r[10])), y = c(res.cr1$obs[10],res.cr1$obs[10]+0.5*(res.cr1$obs[11] - res.cr1$obs[10])), lwd = 16, 
       col = "black")
-lines(res.cr1$r[44:46], res.cr1$obs[44:46], lwd = 4)
+lines(res.cr1$r[44:46], res.cr1$obs[44:46], lwd = 16)
 lines(x = c(10,100), y = c(1,1), lty = 2, lwd = 4)
 par(xpd = TRUE)
 mtext(side = 3, text = latex2exp::TeX('p-value$\\in\\lbrack$ 0,0·022 $\\rbrack$'), 
@@ -690,7 +690,7 @@ lines(x = as.numeric(quantile(d.envelope100, probs = c(0.025,0.975))), y=c(0.97,
 type = "l", lwd = 20, col = "blue")
 lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lwd = 8)
 lines(r.max, tau.hagg, lwd = 4)
-legend(x = 40, y = 32, 
+legend(x = 45, y = 32, 
 legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate & $\\hat{D}$'),
 latex2exp::TeX('$\\hat{\\tau}^*$ bootstrap estimates (N=2500)'), 
 latex2exp::TeX('    $\\bullet$  95% percentile CI of $\\hat{D}$'), 
@@ -714,13 +714,14 @@ setwd(figspath)
 pdf("bootstraphist.pdf")
 par(mfrow = c(1,2))
 hist(d.envelope100, breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", main = "N=100", 
-xlab = latex2exp::TeX('Samples of $\\hat{D}$ (m)'), las = 1, col = "ivory1")
+xlab = latex2exp::TeX('Samples of $\\hat{D}$ (m)'), las = 1, col = "ivory1",
+cex.lab = 1.5, lwd = 4)
 abline(v = dintercept.pointestimate, lty = 2, lwd = 4, col = "red")
 abline(v = mean(d.envelope100), lty = 2, lwd = 4, col = "green")
 abline(v = median(d.envelope100), lty = 2, lwd = 4, col = "blue")
 hist(d.envelope2500, breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", ylab = NULL, 
 main = "N=2500", xlab = latex2exp::TeX('Samples of $\\hat{D}$ (m)'), las = 1, 
-col = "ivory1")
+col = "ivory1", cex.lab = 1.5, lwd = 4)
 abline(v = dintercept.pointestimate, lty = 2, lwd = 4, col = "red")
 abline(v = mean(d.envelope2500), lty = 2, lwd = 4, col = "green")
 abline(v = median(d.envelope2500), lty = 2, lwd = 4, col = "blue")
@@ -778,7 +779,7 @@ pdf("bootstraphistv2.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
 par(mfrow = c(2,2))
 hist(d.envelope100,breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", ylab = "Frequency", 
 main = "N=100, resampled-index", xlab = NULL, lwd = 4, ylim = c(0,41), las = 1
-, col = "ivory1")
+, col = "ivory1", cex.lab = 1.5)
 fig_label("a", cex = 3, region = "plot", lwd = 4)
 lines(x = coxed::bca(d.envelope100, 0.95), y = c(0,0), lty = 1, lwd = 24, col = "purple")
 abline(v = dintercept.pointestimate, lty = 2, lwd = 12, col = "red")
@@ -786,7 +787,7 @@ abline(v = mean(d.envelope100), lty = 2, lwd = 8, col = "green")
 abline(v = median(d.envelope100), lty = 2, lwd = 8, col = "blue")
 hist(d.envelope100lohv2,breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", ylab = NULL, 
 main = "N=100, modified marked point", xlab = NULL, lwd = 4, ylim = c(0,41), 
-las = 1, col = "ivory1")
+las = 1, col = "ivory1", cex.lab = 1.5)
 fig_label("b", cex = 3, region = "plot", lwd = 4)
 lines(x = coxed::bca(d.envelope100lohv2, 0.95), y = c(0,0), lty = 1, lwd = 24, 
       col = "purple")
@@ -795,7 +796,8 @@ abline(v = mean(d.envelope100lohv2), lty = 2, lwd = 8, col = "green")
 abline(v = median(d.envelope100lohv2), lty = 2, lwd = 8, col = "blue")
 hist(d.envelope2500,breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", 
      ylab = "Frequency", col = "ivory1",main = "N=2500, resampled-index", 
-xlab = latex2exp::TeX('$\\underline{D}$ (m)'), lwd = 4, ylim = c(0,1160), las = 1)
+xlab = latex2exp::TeX('$\\underline{D}$ (m)'), lwd = 4, ylim = c(0,1160), las = 1,
+ cex.lab = 1.5)
 fig_label("c", cex = 3, region = "plot", lwd = 4)
 lines(x = coxed::bca(d.envelope2500, conf.level = 0.95), y = c(0,0), lty = 1, lwd = 24, 
       col = "purple")
@@ -804,7 +806,7 @@ abline(v = mean(d.envelope2500), lty = 2, lwd = 8, col = "green")
 abline(v = median(d.envelope2500), lty = 2, lwd = 8, col = "blue")
 hist(d.envelope2500lohv2,breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", ylab = NULL, 
 main = "N=2500, modified marked point", xlab = latex2exp::TeX('$\\underline{D}$ (m)'), 
-lwd = 4, ylim = c(0,1160), las = 1, col = "ivory1")
+lwd = 4, ylim = c(0,1160), las = 1, col = "ivory1", cex.lab = 1.5)
 fig_label("d", cex = 3, region = "plot", lwd = 4)
 lines(x = coxed::bca(d.envelope2500lohv2), y = c(0,0), lty = 1, lwd = 24, col = "purple")
 abline(v = dintercept.pointestimate, lty = 2, lwd = 12, col = "red")
@@ -850,7 +852,7 @@ lines(x = coxed::bca(d.envelope2500lohv2, conf.level = 0.95), y=c(0.97,0.97), ty
 lwd = 20, col = "blue")
 lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lwd = 8)
 lines(r.max,tau.hagg, lwd = 4)
-legend(x = 40, y = 32, 
+legend(x = 45, y = 32, 
 legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate & $\\hat{D}$'), latex2exp::TeX('$\\hat{\\tau}^*$: resampled-index (N=2500)'), 
 latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\hat{D}$'), 
 latex2exp::TeX('$\\hat{\\tau}^*$: modified marked point (N=2500)'), 
@@ -1075,7 +1077,7 @@ lines(r.max,tau.hagg.newdb, col = "black", lty = 1, lwd = 4)
 lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lwd = 8, 
       col = "gray30")
 lines(r.max.newdb, tau.newdb, col = "gray38", lty = 1, lwd = 4)
-legend(x = 20, y = 6.5, 
+legend(x = 25, y = 6.5, 
 legend=c(latex2exp::TeX(
 '$\\hat{\\tau}$ point estimate & $\\hat{D}$ (overlapping dist. band)'), latex2exp::TeX('$\\hat{\\tau}^*$ simulations'), 
 latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\hat{D}$'), 
@@ -1123,7 +1125,8 @@ tau.sim[1,3:4] = tau.sim[1,3:4] - 0.1 # tweak dummy 'point estimate'
 setwd("figs/")
 pdf("centralnull.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
 par(mfrow = c(1,2))
-plot(NULL, NULL, xlim = c(0,10), ylim = c(0.5,2), type = "l", xlab = "d", ylab = latex2exp::TeX('$\\tau (d)$'), col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", lwd = 4, cex.lab = 1.5)
+plot(NULL, NULL, xlim = c(0,10), ylim = c(0.5,2), type = "l", xlab = "d", ylab = "", col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", lwd = 4, cex.lab = 1.5)
+mtext(latex2exp::TeX('$\\tau (d)$'), side=2, line=3, cex = 1.5, padj = 1)
 axis(1, labels = c(0,2,latex2exp::TeX('$\\hat{D}$'),4,6,8,10), at = c(0,2,2.7,4,6,8,10), 
      lwd = 4, las = 1)
 axis(2, labels = c("0·5","1","1·5","2·0"), at = c(0.5,1,1.5,2.0), lwd = 4, las = 1)
