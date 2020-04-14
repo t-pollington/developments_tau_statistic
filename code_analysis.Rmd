@@ -743,7 +743,7 @@ set.seed(seed = 5) # set at seed = 5 to compare with tauCItmp2500noinfs
 ptm = proc.time()
 tauCI2500lohv2 = summonTauBstraplohv2(X.region = as.matrix(hag.dat), r.min = r.min, 
 r.max = r.max, bootiters = 2500, T1 = 0, T2 = 14)
-proc.time() - ptm # 16·542s
+proc.time() - ptm # 17s
 d.envelope2500lohv2 = ciIntercept(2500, end.set = r.max, tau.sim = tauCI2500lohv2)
 setwd(intrmd8path)
 save(d.envelope2500lohv2, file = "d.envelope2500lohv2.RData")
