@@ -536,7 +536,7 @@ lines(res.cr$r, res.cr$obs, lwd = 4)
 axis(1, lwd = 4)
 abline(h=1, lty = 2, lwd = 4)
 legend(x = 120, y = 3.4, legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate'), 
-"95% global envelope",latex2exp::TeX('simulations of $H_0$'), "median simulation",
+"95% global envelope",latex2exp::TeX('$H_0$ simulations'), "median simulation",
 latex2exp::TeX('$\\tau = 1$')), col=c("black", "slategrey", "grey", "red", "black"),
 lty=c(1,1,1,1,2), cex=1.05, yjust = 0.5, lwd = 6)
 par(xpd = TRUE)
@@ -838,9 +838,9 @@ lines(x=c(dintercept.pointestimate,dintercept.pointestimate), y = c(0.9,1.1), lw
 lines(r.max,tau.hagg, lwd = 4)
 legend(x = 40, y = 32, 
 legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate & $\\hat{D}$'), latex2exp::TeX('$\\hat{\\tau}^*$: resampled-index (N=2500)'), 
-latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'), 
+latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\hat{D}$'), 
 latex2exp::TeX('$\\hat{\\tau}^*$: modified marked point (N=2500)'), 
-latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'),
+latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\hat{D}$'),
 latex2exp::TeX('$\\tau = 1$')), 
 col=c("black", "grey", "red", "green", "blue", "black"), lty=c(1,1,1,1,1,2), 
 lwd = c(6,6,30,6,30,6), pch = c(124,NA,NA,NA,NA,NA), cex=1.05, yjust = 0.5)
