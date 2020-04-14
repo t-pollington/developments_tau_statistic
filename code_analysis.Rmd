@@ -102,8 +102,9 @@ breaks = seq.int(tPRO.range[1],tPRO.range[2],by = 1), xaxs="i", yaxs="i", xaxt =
 yaxt = "n", col = "ivory1", panel.first = {
   grid(NA,10,lty = 3,lwd = 0.5, col = "grey")
 })
-axis(2, at=c(0,5,10,15,20), labels=c(0,5,10,15,20), col.axis="black", las=1)
-axis(1, at=c(0,23,47,60,80,87), labels=c(0,23,47,60,80,87), col.axis="black", las=1)
+axis(2, at=c(0,5,10,15,20), labels=c(0,5,10,15,20), col.axis="black", las=1, lwd = 4)
+axis(1, at=c(0,23,47,60,80,87), labels=c(0,23,47,60,80,87), col.axis="black", las=1, 
+     lwd = 4)
 dev.off()
 ```
 
@@ -126,11 +127,11 @@ par(las = 1)
 plot(jitter(X$x.loc,amount = 5), jitter(X$y.loc,amount = 5), col = df$col, main = NULL, 
 xlab = "", ylab = "", xaxs="i", yaxs="i", xaxt = "n", yaxt = "n",
 pch = 20, cex = 2, cex.lab = 1.5, xlim = c(0,(max(X$x.loc)+5)), 
-ylim = c(0,(max(X$y.loc)+5)))
+ylim = c(0,(max(X$y.loc)+5)), lwd = 4)
 axis(2, las=1, at=c(0,50,100,150,200,240), labels = c("0","50","100","150","200","240"), 
-     lwd = 1)
+     lwd = 4)
 axis(1, las=1, at=c(0,50,100,150,200,250,280), labels = c("0","50","100","150","200",
-                                                          "250","280"), lwd = 1)
+                                                          "250","280"), lwd = 4)
 par(las = 0)
 mtext(latex2exp::TeX('$y$ (m)'), side=2, line=3, cex = 1.5, padj = 1)
 mtext(latex2exp::TeX('$x$ (m)'), side=1, line=3, cex = 1.5)
@@ -138,7 +139,7 @@ par(xpd=TRUE)
 legend.text = c("1-9","10-19","20-28","29-38","39-47","48-57","58-67","68-76","77-86",
 "87")
 legend(x = 5,y = 235, title = "Onset time decile (days)", legend = legend.text, 
-col  = rbPal(10), pch = 20, cex = 0.9, pt.cex = 2, ncol = 2)
+col  = rbPal(10), pch = 20, cex = 1.05, pt.cex = 2, ncol = 2)
 dev.off()
 ```
 
@@ -399,7 +400,7 @@ legend(x = 35, y = 8, bg = "white",
     '95% pointwise percentile CI of $\\hat{\\tau}$ ($\\textit{IDSpatialStats}$)'), 
   "End of clustering (defined by Lessler et al.)", 
   latex2exp::TeX('Clustering endpoint point estimate, $\\hat{D}$ (our definition)')),
-col=c("black", "green", "slategrey", "red", "red"), lty=c(1,2,3,1,2), cex=0.9, 
+col=c("black", "green", "slategrey", "red", "red"), lty=c(1,2,3,1,2), cex=1.05, 
 yjust = 0.5, lwd = 6)
 dev.off()
 
@@ -407,7 +408,8 @@ dev.off()
 pdf("taureproduction.ga.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
 plot(r.max, tau.hagg, ylim=c(0.6,max(tau.ci[2,])+0.5), type="l", xlim=c(0,100), yaxt="n", 
      axes=FALSE, xaxs="i", yaxs="i", col = "black", log = "y",
-     xlab = latex2exp::TeX('Distance from average case, $d$ (m)'), ylab = "", lwd = 8, cex.lab = 2)
+     xlab = latex2exp::TeX('Distance from average case, $d$ (m)'), ylab = "", 
+     lwd = 8, cex.lab = 2)
 mtext(latex2exp::TeX('$\\tau$'), side = 2, cex = 2, las = 1, line = 2, lwd = 4)
 axis(2, las=1, at=c(0.6,1,12.0), labels = c("0·6","1","12"), cex = 2, lwd = 4)
 axis(1, las=1, at = c(0,50,100), labels = c("0","50","100"), cex = 2, lwd = 4)
@@ -463,20 +465,21 @@ sum(apply(hag.permute.noinfs,1,is.infinite)) # 0 PASS
 # check that the null simulations is acceptably close to tau = 1
 plot(r.max.entire, apply(hag.permute.noinfs, 1, median), type = "l", col = "red",
      ylim = c(0.5,10), log = "y", xaxs = "i", yaxs = "i", xlab = "d", xaxt = "n",
-     ylab = latex2exp::TeX('$\\tau (d)$'), lwd = 2)
-lines(r.max.entire, apply(hag.permute.noinfs, 1, mean), col = "blue", lwd = 2)
+     ylab = latex2exp::TeX('$\\tau (d)$'), lwd = 4, cex.lab = 1.5)
+lines(r.max.entire, apply(hag.permute.noinfs, 1, mean), col = "blue", lwd = 4)
 lines(r.max.entire, apply(hag.permute.noinfs, 1, quantile, probs = 0.75), 
-      col = "green", lwd = 2)
+      col = "green", lwd = 4)
 lines(r.max.entire, apply(hag.permute.noinfs, 1, max), 
-      col = "darkgreen", lwd = 2)
+      col = "darkgreen", lwd = 4)
 lines(r.max.entire, apply(hag.permute.noinfs, 1, quantile, probs = 0.25), 
-      col = "darkorange", lwd = 2)
-lines(r.max.entire, apply(hag.permute.noinfs, 1, min), col = "darkorange3", lwd = 2)
-abline(h = 1, lty = 2, lwd = 2)
-abline(v = 220, col = "darkgray")
-abline(h = seq(0.5,10,0.2), v = seq.int(50,300,50), lty = "dotted", col = "lightgray")
+      col = "darkorange", lwd = 4)
+lines(r.max.entire, apply(hag.permute.noinfs, 1, min), col = "darkorange3", lwd = 4)
+abline(h = 1, lty = 2, lwd = 4)
+abline(v = 220, col = "darkgray", lwd = 4)
+abline(h = seq(0.5,10,0.2), v = seq.int(50,300,50), lty = "dotted", lwd = 4
+       col = "lightgray")
 axis(1, las=1, at=c(0,50,100,150,200,220,250,300), 
-     labels = c("0","50","100","150","200","220","250","300"), lwd = 1)
+     labels = c("0","50","100","150","200","220","250","300"), lwd = 4)
 legend(x = 30, y = 5, title = "Null simulations", ncol = 2,
        legend=c("maximum", 
 "upper quartile",
@@ -486,7 +489,7 @@ legend(x = 30, y = 5, title = "Null simulations", ncol = 2,
 "minimum",
 latex2exp::TeX('$\\tau = 1$')), 
 col=c("darkgreen", "green", "blue", "red", "darkorange","darkorange3","black"),
-lty=c(1,1,1,1,1,1,2), cex=1, yjust = 0.5, lwd = 3)
+lty=c(1,1,1,1,1,1,2), cex=1.05, yjust = 0.5, lwd = 3)
 tau.hagg.entire = IDSpatialStats::get.tau(hag.dat, hagg.func, r=r.max.entire, 
                                           r.low=r.min.entire, 
                                           comparison.type = "independent")$tau
@@ -536,13 +539,13 @@ for (i in 1:2500) {
   lines(r.max.220, hag.permute.220[,i], col = scales::alpha("grey", alpha = 0.3), 
         lwd = 4)
 }
-axis(2, las=1, at=c(0.7,1,2,3,4), labels = c("0·7","1","2·0","3·0","4·0"), lwd = 1)
-lines(res.cr$r, res.cr$lo, col = "slategrey", lwd = 6)
-lines(res.cr$r, res.cr$hi, col = "slategrey", lwd = 6)
-lines(res.cr$r, res.cr$central, col = "red", lwd = 6)
+axis(2, las=1, at=c(0.7,1,2,3,4), labels = c("0·7","1","2·0","3·0","4·0"), lwd = 4)
+lines(res.cr$r, res.cr$lo, col = "slategrey", lwd = 4)
+lines(res.cr$r, res.cr$hi, col = "slategrey", lwd = 4)
+lines(res.cr$r, res.cr$central, col = "red", lwd = 4)
 lines(res.cr$r, res.cr$obs, lwd = 4)
 axis(1, las=1, at=c(0,50,100,150,200,220), labels = c("0","50","100","150","200","220"),
-     lwd = 1)
+     lwd = 4)
 abline(h=1, lty = 2, lwd = 4)
 legend(x = 120, y = 3.4, legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate'), 
 "95% global envelope",latex2exp::TeX('$H_0$ simulations'), "median simulation",
@@ -565,18 +568,18 @@ xlab = latex2exp::TeX(
 '$d$ (m)'), lwd = 8, cex.lab = 2)
 mtext(latex2exp::TeX('$\\tau$'), side = 2, cex = 2, las = 1, line = 2, lwd = 4)
 for (i in 1:2500) {
-  lines(r.max1, hag.permute1[,i], col = scales::alpha("grey", alpha = 0.3), lwd = 8)
+  lines(r.max1, hag.permute1[,i], col = scales::alpha("grey", alpha = 0.3), lwd = 4)
 }
 axis(2, las=1, at=c(0.7,1,4), labels = c("0·7","1","4·0"), cex = 2, lwd = 4)
 axis(1, las=1, at=c(10, 50, 100), labels = c("10","50","100"), cex = 2, lwd = 4)
-lines(res.cr1$r, res.cr1$lo, col = "slategrey", lwd = 8)
-lines(res.cr1$r, res.cr1$hi, col = "slategrey", lwd = 8)
-lines(res.cr1$r, res.cr1$obs, lwd = 8)
+lines(res.cr1$r, res.cr1$lo, col = "slategrey", lwd = 4)
+lines(res.cr1$r, res.cr1$hi, col = "slategrey", lwd = 4)
+lines(res.cr1$r, res.cr1$obs, lwd = 4)
 lines(res.cr1$r[1:10], res.cr1$obs[1:10], lwd = 16)
 lines(x = c(res.cr1$r[10],res.cr1$r[10]+0.5*(res.cr1$r[11] - res.cr1$r[10])), y = c(res.cr1$obs[10],res.cr1$obs[10]+0.5*(res.cr1$obs[11] - res.cr1$obs[10])), lwd = 16, 
       col = "black")
-lines(res.cr1$r[44:46], res.cr1$obs[44:46], lwd = 16)
-lines(x = c(10,100), y = c(1,1), lty = 2, lwd = 8)
+lines(res.cr1$r[44:46], res.cr1$obs[44:46], lwd = 4)
+lines(x = c(10,100), y = c(1,1), lty = 2, lwd = 4)
 par(xpd = TRUE)
 mtext(side = 3, text = latex2exp::TeX('p-value$\\in\\lbrack$ 0,0·022 $\\rbrack$'), 
 outer = 0, cex = 2, lwd = 4)
@@ -664,7 +667,7 @@ save(dintercept.pointestimate, file = "dintercept.pointestimate.RData")
 setwd(figspath)
 pdf("nbstrap.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
 plot(NULL, xlim = c(0,120), log="y", ylim = c(0.5,93), xaxt = "n", yaxt = "n", 
-     xaxs = "i", yaxs = "i", ylab = "", xlab = "")
+     xaxs = "i", yaxs = "i", ylab = "", xlab = "", lwd = 4, cex.lab = 1.5)
 mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
 mtext(latex2exp::TeX(
 'Distance band endpoint (1/2$(d_l + d_m)$)'), side=1, line=3, cex = 1.5)
@@ -712,15 +715,15 @@ pdf("bootstraphist.pdf")
 par(mfrow = c(1,2))
 hist(d.envelope100, breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", main = "N=100", 
 xlab = latex2exp::TeX('Samples of $\\hat{D}$ (m)'), las = 1, col = "ivory1")
-abline(v = dintercept.pointestimate, lty = 2, lwd = 2, col = "red")
-abline(v = mean(d.envelope100), lty = 2, lwd = 2, col = "green")
-abline(v = median(d.envelope100), lty = 2, lwd = 2, col = "blue")
+abline(v = dintercept.pointestimate, lty = 2, lwd = 4, col = "red")
+abline(v = mean(d.envelope100), lty = 2, lwd = 4, col = "green")
+abline(v = median(d.envelope100), lty = 2, lwd = 4, col = "blue")
 hist(d.envelope2500, breaks = seq.int(0,110,10), xaxs = "i", yaxs = "i", ylab = NULL, 
 main = "N=2500", xlab = latex2exp::TeX('Samples of $\\hat{D}$ (m)'), las = 1, 
 col = "ivory1")
-abline(v = dintercept.pointestimate, lty = 2, lwd = 2, col = "red")
-abline(v = mean(d.envelope2500), lty = 2, lwd = 2, col = "green")
-abline(v = median(d.envelope2500), lty = 2, lwd = 2, col = "blue")
+abline(v = dintercept.pointestimate, lty = 2, lwd = 4, col = "red")
+abline(v = mean(d.envelope2500), lty = 2, lwd = 4, col = "green")
+abline(v = median(d.envelope2500), lty = 2, lwd = 4, col = "blue")
 dev.off()
 ```
 ![Histogram of the $\hat{D}$ estimates by number of bootstrap estimates](./figs/bootstraphist.pdf){width=100%}
@@ -824,7 +827,8 @@ coxed::bca(d.envelope2500lohv2, conf.level = 0.95)
 
 pdf("nbstrapv2.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
 plot(NULL, xlim = c(0,120), log="y", ylim = c(0.5,max(tauCItmp2500noinfs,tauCI2500lohv2)),
-xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", xlab = "", lwd = 4)
+xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", xlab = "", lwd = 4,
+cex.lab = 1.5)
 mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
 mtext(latex2exp::TeX(
 'Distance band endpoint (1/2$(d_l + d_m)$)'), side=1, line=3, cex = 1.5)
@@ -838,7 +842,7 @@ for (i in 1:2500) {
 }
 axis(2,las=1,at=c(0.5,1,2,4,16,32,64,92), labels = c("0·5","1","2·0","4·0","16·0","32·0","64·0","92·0"), lwd = 4)
 axis(1, lwd = 4)
-lines(x = c(0,120),y = c(1,1),lty = 8)
+lines(x = c(0,120),y = c(1,1),lty = 4)
 par(lend=1);
 lines(x = coxed::bca(d.envelope2500, conf.level = 0.95), y=c(1.03,1.03), type = "l", 
 lwd = 20, col = "red")
@@ -934,7 +938,7 @@ pdf("loh.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
 plot(NULL, xlim = c(0,120), log="y", ylim = c(0.5,max(tausims.loh1,tausims.loh2)), 
 xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", 
 ylab = "", 
-xlab = "", lwd = 4)
+xlab = "", lwd = 4, cex.lab = 1.5)
 mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
 mtext(latex2exp::TeX(
 'Distance band endpoint (1/2$(d_l + d_m)$)'), side=1, line=3, 
@@ -998,7 +1002,7 @@ seq.int(from = 15, to = (ceiling(max(dist.cases)/5)*5),by = 5))
 hist(dist.cases, xlab = "Pairwise distance between cases (m)", breaks = dist.bands,
 main="Distance histogram (ignoring pairs separated by >200m)", freq = FALSE, xaxs = "i", 
 yaxs = "i")
-abline(v = 200, col = "red")
+abline(v = 200, col = "red", lwd = 4)
 
 dist.bands = c(0, floor(first.nonzero.dist), seq.int(from = 15,to = 200,by = 5))
 r.min.newdb = sort(rev(dist.bands)[-1])
@@ -1044,7 +1048,7 @@ pdf("distband.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
 plot(NULL, xlim = c(0,120), log="y", ylim = c(0.3, (max(tausims.loh2[,1], 
 tau.sims.newdb[,1])+4)), xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", 
 ylab = "", 
-xlab = "", lwd = 4)
+xlab = "", lwd = 4, cex.lab = 1.5)
 mtext(latex2exp::TeX('$\\tau (d_l,d_m)$'), side=2, line=2, cex = 1.5)
 mtext(latex2exp::TeX(
 'Distance band endpoint (1/2$(d_l + d_m)$),'), side=1, line=3, cex = 1.5)
@@ -1119,7 +1123,7 @@ tau.sim[1,3:4] = tau.sim[1,3:4] - 0.1 # tweak dummy 'point estimate'
 setwd("figs/")
 pdf("centralnull.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
 par(mfrow = c(1,2))
-plot(NULL, NULL, xlim = c(0,10), ylim = c(0.5,2), type = "l", xlab = "d", ylab = latex2exp::TeX('$\\tau (d)$'), col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", lwd = 4)
+plot(NULL, NULL, xlim = c(0,10), ylim = c(0.5,2), type = "l", xlab = "d", ylab = latex2exp::TeX('$\\tau (d)$'), col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", lwd = 4, cex.lab = 1.5)
 axis(1, labels = c(0,2,latex2exp::TeX('$\\hat{D}$'),4,6,8,10), at = c(0,2,2.7,4,6,8,10), 
      lwd = 4, las = 1)
 axis(2, labels = c("0·5","1","1·5","2·0"), at = c(0.5,1,1.5,2.0), lwd = 4, las = 1)
@@ -1134,7 +1138,7 @@ abline(v = 2.7, col = "blue", lty = 2, lwd = 4)
 
 plot(NULL, NULL, xlim = c(0,10), ylim = c(0.5,2), type = "l", xlab = "d", ylab = "", 
      col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", 
-     lwd = 4)
+     lwd = 4, cex.lab = 1.5)
 axis(1, labels = c(0,2,latex2exp::TeX('$\\hat{D}$'),5,6,8,10), at = c(0,2,3.25,5,6,8,10), 
      lwd = 4, las = 1)
 axis(2, labels = c("0·5","1","1·5","2·0"), at = c(0.5,1,1.5,2.0), lwd = 4, las = 1)
