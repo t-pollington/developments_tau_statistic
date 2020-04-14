@@ -30,7 +30,7 @@ Please kindly cite as:
 Our code implements *graphical hypothesis testing* of the *tau statistic* and examines how different aspects of implementation may affect the *endpoint of spatiotemporal clustering* and its *precision*, by comparing against the standard analysis [@Lessler2016]---a measles dataset[@Pfeilsticker1863;@Oesterle1992;@Neal2004] with the time-relatedness interval defined as $[T_1=0, T_2=14]$ and an overlapping distance band set. 
 
 # How to use this document
-This `.Rmd` document can be *knitted* in *RStudio*[@RStudio] to output a results `.pdf` file for easier printing or device accessibility. It is composed of chunks that all run when the document is knit to print the results, or they can be run separately in *RStudio* (note: they may depend on variables from earlier chunks having been run). A [(References section)](#references) is provided . Other sections are cross-linked throughout using internal links.
+This `.Rmd` document can be *knitted* in *RStudio*[@RStudio] to output a results `.pdf` file for easier printing or device accessibility. It is composed of chunks that all run when the document is knit to print the results, or they can be run separately in *RStudio* (note: they may depend on variables from earlier chunks having been run, in which case run the previous chunks using the $\underline{\downarrow}$ button first, found at the top of the chunk of interest). A [References section](#references) is provided. Other sections are cross-linked throughout using internal links.
 
 Cloning this [GitHub repository](https://github.com/t-pollington/developments_tau_statistic) makes sense if you want to easily amend code. If you find errors please contact us using an Issue request before doing a Pull request to save you time, in case we can easily answer it first. 
 
@@ -71,7 +71,8 @@ data("hagelloch", package = "surveillance")
 library(surveillance)
 ```
 ```{r data check}
-help("hagelloch") # load dataset info in RStudio's Help pane or in browser if knitted
+# help("hagelloch") # uncomment to load dataset info in RStudio's Help pane/browser if 
+# knitted
 rm(hagelloch) # additional time series object that loads is not required
 # X = {house no, patient no, x/y-location, prodromal start}
 X = subset(hagelloch.df, select = c("HN","PN","x.loc","y.loc","tPRO"))
@@ -1109,6 +1110,8 @@ for (i in 1:n.sim) {
 # get envelope----
 central.env = apply(tau.sim,2, quantile, probs = c(0.025,0.975))
 null.env = apply(null.sim,2, quantile, probs = c(0.025,0.975))
+tau.sim[1,9:11] = c(0.85,0.82, 0.79)  # tweak dummy 'point estimate'
+tau.sim[1,3:4] = tau.sim[1,3:4] - 0.1 # tweak dummy 'point estimate'
 
 # plot test set and envelope----
 setwd("figs/")
@@ -1124,12 +1127,13 @@ for (i in 1:100) {
 abline(h=1,col = "red", lwd = 4)
 lines(seq.int(0,10), central.env[1,], type = "l", lwd = 4)
 lines(seq.int(0,10), central.env[2,], type = "l", lwd = 4)
+lines(seq.int(0,10), tau.sim[1,], type = "l", lwd = 4, col = "blue")
 abline(v = 2.7, col = "blue", lty = 2, lwd = 4)
 
 plot(NULL, NULL, xlim = c(0,10), ylim = c(0.5,2), type = "l", xlab = "d", ylab = "", 
      col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", 
      lwd = 4)
-axis(1, labels = c(0,2,latex2exp::TeX('$\\hat{D}$'),5,6,8,10), at = c(0,2,3.55,5,6,8,10), 
+axis(1, labels = c(0,2,latex2exp::TeX('$\\hat{D}$'),5,6,8,10), at = c(0,2,3.25,5,6,8,10), 
      lwd = 4, las = 1)
 axis(2, labels = c("0·5","1","1·5","2·0"), at = c(0.5,1,1.5,2.0), lwd = 4, las = 1)
 for (i in 1:100) {
@@ -1139,7 +1143,7 @@ abline(h=1, col = "red", lwd = 4)
 lines(seq.int(0,10), null.env[1,], type = "l", lwd = 4)
 lines(seq.int(0,10), null.env[2,], type = "l", lwd = 4)
 lines(seq.int(0,10), tau.sim[1,], type = "l", lwd = 4, col = "blue")
-abline(v = 3.55, col = "blue", lty = 2, lwd = 4)
+abline(v = 3.25, col = "blue", lty = 2, lwd = 4)
 dev.off()
 ```
 ![Diagram showing how reviewed papers would hypothesis test and estimate parameters simulatenously using central or null envelopes formed from pointwise percentile CIs.](./figs/centralnull.pdf){width=100%}
