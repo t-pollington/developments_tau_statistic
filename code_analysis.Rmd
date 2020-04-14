@@ -102,7 +102,7 @@ yaxt = "n", col = "black", panel.first = {
   grid(NA,10,lty = 3,lwd = 0.5, col = "grey")
 })
 axis(2, at=c(0,5,10,15,20), labels=c(0,5,10,15,20), col.axis="black", las=1)
-axis(1, at=c(0,23,47,60,80,87), labels=c(0,23,47,60,80,""), col.axis="black", las=1)
+axis(1, at=c(0,23,47,60,80,87), labels=c(0,23,47,60,80,87), col.axis="black", las=1)
 dev.off()
 ```
 
@@ -123,9 +123,13 @@ pdf("STplot.pdf")
 # jitter in x & y separately, using Uniform[-2,+2] distribution .
 par(las = 1)
 plot(jitter(X$x.loc,amount = 5), jitter(X$y.loc,amount = 5), col = df$col, main = NULL, 
-xlab = "", ylab = "", xaxs="i", yaxs="i", 
-pch = 20, cex = 2, cex.lab = 1.5, xlim = c((min(X$x.loc)-5),(max(X$x.loc)+5)), 
-ylim = c((min(X$y.loc)-5),(max(X$y.loc)+5)))
+xlab = "", ylab = "", xaxs="i", yaxs="i", xaxt = "n", yaxt = "n",
+pch = 20, cex = 2, cex.lab = 1.5, xlim = c(0,(max(X$x.loc)+5)), 
+ylim = c(0,(max(X$y.loc)+5)))
+axis(2, las=1, at=c(0,50,100,150,200,240), labels = c("0","50","100","150","200","240"), 
+     lwd = 1)
+axis(1, las=1, at=c(0,50,100,150,200,250,280), labels = c("0","50","100","150","200",
+                                                          "250","280"), lwd = 1)
 par(las = 0)
 mtext(latex2exp::TeX('$y$ (m)'), side=2, line=3, cex = 1.5, padj = 1)
 mtext(latex2exp::TeX('$x$ (m)'), side=1, line=3, cex = 1.5)
@@ -401,7 +405,7 @@ dev.off()
 pdf("taureproduction.ga.pdf", width = 7*4, height = 7*4, pointsize = 12*4)
 plot(r.max, tau.hagg, ylim=c(0.6,max(tau.ci[2,])+0.5), type="l", xlim=c(0,100), yaxt="n", 
      axes=FALSE, xaxs="i", yaxs="i", col = "black", log = "y",
-     xlab = latex2exp::TeX('Distance from average case, $d$'), ylab = "", lwd = 8, cex.lab = 2)
+     xlab = latex2exp::TeX('Distance from average case, $d$ (m)'), ylab = "", lwd = 8, cex.lab = 2)
 mtext(latex2exp::TeX('$\\tau$'), side = 2, cex = 2, las = 1, line = 2, lwd = 4)
 axis(2, las=1, at=c(0.6,1,12.0), labels = c("0·6","1","12"), cex = 2, lwd = 4)
 axis(1, las=1, at = c(0,50,100), labels = c("0","50","100"), cex = 2, lwd = 4)
@@ -555,7 +559,7 @@ plot(NULL, xlim = c(10,100), ylim = c(min(res.cr1$lo,res.cr1$obs),max(res.cr1$ob
      xaxt = "n", 
 yaxt = "n", xaxs = "i", yaxs = "i", ylab = "", 
 xlab = latex2exp::TeX(
-'$d$'), lwd = 8, cex.lab = 2)
+'$d$ (m)'), lwd = 8, cex.lab = 2)
 mtext(latex2exp::TeX('$\\tau$'), side = 2, cex = 2, las = 1, line = 2, lwd = 4)
 for (i in 1:2500) {
   lines(r.max1, hag.permute1[,i], col = scales::alpha("grey", alpha = 0.3), lwd = 8)
@@ -853,7 +857,7 @@ pdf("nbstrapv2.ga.pdf", width = 4*7, height = 4*7, pointsize = 4*12)
 plot(NULL, xlim = c(10,100), log="y", ylim = c(0.6,max(tauCI2500lohv2)),
 xaxt = "n", yaxt = "n", xaxs = "i", yaxs = "i", 
 ylab = "", 
-xlab = latex2exp::TeX('$d$'), cex.lab = 2, lwd = 8)
+xlab = latex2exp::TeX('$d$ (m)'), cex.lab = 2, lwd = 8)
 for (i in 1:2500) {
   lines(r.max, tauCI2500lohv2[i,], col = scales::alpha("green", alpha = 0.1), lwd = 8)
 }
