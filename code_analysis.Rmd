@@ -386,9 +386,11 @@ lines(r.max, tau.ci[,1], lty = 3, col = "slategrey", lwd = 4)
 lines(r.max, tau.ci[,2], lty = 3, col = "slategrey", lwd = 4)
 abline(v = 29, col = "red", lwd = 4)
 abline(v = 61, col = "red", lty = 2, lwd = 4)
-legend(x = 35, y = 8, bg = "white", legend=c(bquote(hat(tau) ~ "point estimate"), 
-  "95% pointwise percentile CI (our function)", 
-  latex2exp::TeX('95% pointwise percentile CI ($\\textit{IDSpatialStats}$)'), 
+legend(x = 35, y = 8, bg = "white", 
+       legend=c(bquote(hat(tau) ~ "point estimate"), 
+  latex2exp::TeX('95% pointwise percentile CI of $\\hat{\\tau}$ (our function)'),
+  latex2exp::TeX(
+    '95% pointwise percentile CI of $\\hat{\\tau}$ ($\\textit{IDSpatialStats}$)'), 
   "End of clustering (defined by Lessler et al.)", 
   latex2exp::TeX('Clustering endpoint point estimate, $\\hat{D}$ (our definition)')),
 col=c("black", "green", "slategrey", "red", "red"), lty=c(1,2,3,1,2), cex=0.9, 
@@ -682,9 +684,9 @@ lines(r.max, tau.hagg, lwd = 4)
 legend(x = 40, y = 32, 
 legend=c(latex2exp::TeX('$\\hat{\\tau}$ point estimate & $\\hat{D}$'),
 latex2exp::TeX('$\\hat{\\tau}^*$ bootstrap estimates (N=2500)'), 
-latex2exp::TeX('    $\\bullet$  95% percentile CI of $\\underline{D}$'), 
+latex2exp::TeX('    $\\bullet$  95% percentile CI of $\\hat{D}$'), 
 latex2exp::TeX('$\\hat{\\tau}^*$ bootstrap estimates (N=100)'), 
-latex2exp::TeX('    $\\bullet$  95% percentile CI of $\\underline{D}$'),
+latex2exp::TeX('    $\\bullet$  95% percentile CI of $\\hat{D}$'),
 latex2exp::TeX('$\\tau = 1$')), col=c("black", "grey", "red", "green", "blue", "black"),
 lty=c(1,1,1,1,1,2), lwd = c(6,6,30,6,30,6), pch = c(124,NA,NA,NA,NA,NA), cex=1.05, 
 yjust = 0.5)
@@ -952,10 +954,10 @@ legend=c(latex2exp::TeX(
 '$\\hat{\\tau}$ point estimate & $\\hat{D}$'),
 latex2exp::TeX(
 '$\\hat{\\tau}^*$: Loh & Stein\'s marked point (N=2500)'), 
-latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'), 
+latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\hat{D}$'), 
 latex2exp::TeX(
 '$\\hat{\\tau}^*$: modified marked point (N=2500)'),
-latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'),
+latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\hat{D}$'),
 latex2exp::TeX('$\\tau = 1$')), 
 col=c("black", "grey", "red", "green", "blue", "black"), lty=c(1,1,1,1,1,2), 
 lwd = c(6,6,30,6,30,6), pch = c(124,NA,NA,NA,NA,NA), cex=1.05, yjust = 0.5)
@@ -1064,11 +1066,11 @@ lines(r.max.newdb, tau.newdb, col = "gray38", lty = 1, lwd = 4)
 legend(x = 20, y = 6.5, 
 legend=c(latex2exp::TeX(
 '$\\hat{\\tau}$ point estimate & $\\hat{D}$ (overlapping dist. band)'), latex2exp::TeX('$\\hat{\\tau}^*$ simulations'), 
-latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'), 
+latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\hat{D}$'), 
 latex2exp::TeX(
 '$\\hat{\\tau}$ point estimate & $\\hat{D}$ (non-overlapping dist. band)'),
 latex2exp::TeX('$\\hat{\\tau}^*$ simulations'), 
-latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\underline{D}$'),
+latex2exp::TeX('    $\\bullet$  95% BCa CI of $\\hat{D}$'),
 latex2exp::TeX('$\\tau = 1$')), 
 col=c("black", "green", "blue", "gray38", "grey", "red", "black"), lty=c(1,1,1,1,1,1,2), 
 lwd = c(6,6,30,6,6,30,6), pch = c(124,NA,NA,124,NA,NA,NA), cex=1.05, yjust = 0.5)
