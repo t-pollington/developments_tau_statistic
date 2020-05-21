@@ -1142,7 +1142,7 @@ abline(v = 2.7, col = "blue", lty = 2, lwd = 4)
 plot(NULL, NULL, xlim = c(0,10), ylim = c(0.5,2), type = "l", xlab = "d", ylab = "", 
      col = scales::alpha("black",0.2), xaxs = "i", yaxs = "i", xaxt = "n", yaxt = "n", 
      lwd = 4, cex.lab = 1.5)
-axis(1, labels = c(0,2,latex2exp::TeX('$\\hat{D}$'),5,6,8,10), at = c(0,2,3.25,5,6,8,10), 
+axis(1, labels = c(0,2,latex2exp::TeX('$\\hat{D}$'),5,6,8,10), at = c(0,2,3.45,5,6,8,10), 
      lwd = 4, las = 1)
 axis(2, labels = c("0·5","1","1·5","2·0"), at = c(0.5,1,1.5,2.0), lwd = 4, las = 1)
 for (i in 1:100) {
@@ -1152,7 +1152,7 @@ abline(h=1, col = "red", lwd = 4)
 lines(seq.int(0,10), null.env[1,], type = "l", lwd = 4)
 lines(seq.int(0,10), null.env[2,], type = "l", lwd = 4)
 lines(seq.int(0,10), tau.sim[1,], type = "l", lwd = 4, col = "blue")
-abline(v = 3.25, col = "blue", lty = 2, lwd = 4)
+abline(v = 3.45, col = "blue", lty = 2, lwd = 4)
 dev.off()
 ```
 ![Diagram showing how reviewed papers would hypothesis test and estimate parameters simulatenously using central or null envelopes formed from pointwise percentile CIs.](./figs/centralnull.pdf){width=100%}
